@@ -130,8 +130,9 @@ export default function CompanyRegisterPage() {
     setStep(prev => prev - 1);
   };
 
-  // 登録完了時の処理 ＆ メール送信トリガー
+  // 登録完了時の処理（堅牢版：必ずローディングが解除されます）
   const handleRegister = async () => {
+    console.log('>>> handleRegister 実行開始');
     setLoading(true);
     setErrorMessage('');
 
@@ -172,31 +173,9 @@ export default function CompanyRegisterPage() {
         createdAt: new Date().toISOString(),
       });
 
-      // 2. 受付確認メールのシミュレーション
-      const emailPayload = {
-        to: email.trim(),
-        subject: '【ネクビジョ求人】企業アカウント登録申請を受付いたしました（審査について）',
-        body: `
-${companyName} ご担当者様
+      console.log('>>> Firestoreへの保存成功！');
 
-ネクビジョ求人プラットフォームをご利用いただき、誠にありがとうございます。
-企業アカウントの新規登録申請を受け付けました。
-
-【重要なお知らせ】
-ご登録いただいた内容をもとに、現在運営チームにて審査を行っております。
-審査完了まで「最大1週間程」お時間をいただく場合がございます。
-審査が完了し次第、ご登録のメールアドレス宛にログイン情報および本登録完了のご案内をお送りいたします。
-
---------------------------------------------------
-ネクビジョ求人プラットフォーム 運営チーム
-https://nexus-job-board-d042c.web.app
---------------------------------------------------
-        `.trim()
-      };
-
-      console.log('--- 2段階認証・受付確認メール送信内容 ---', emailPayload);
-
-      alert('企業アカウントの登録申請を受け付けました。\n\nご登録いただいたメールアドレス宛に受付確認およびご案内メールを送信いたしました。\n審査には最大1週間程かかる場合があります。');
+      alert('企業アカウントの登録申請を受け付けました。\n\n審査には最大1週間程かかる場合があります。');
       
       // フォームリセット
       setStep(1);
@@ -226,10 +205,11 @@ https://nexus-job-board-d042c.web.app
       setEmail('');
       setPassword('');
     } catch (err: any) {
-      console.error('登録エラー詳細:', err);
+      console.error('>>> 登録処理エラー:', err);
       setErrorMessage(err.message || '登録に失敗しました。');
       alert('登録に失敗しました: ' + (err.message || '通信エラーまたは権限エラー'));
     } finally {
+      console.log('>>> 処理終了: setLoading(false)を実行します');
       setLoading(false);
     }
   };
