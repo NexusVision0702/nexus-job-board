@@ -38,8 +38,7 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
   const [agreedAntiSocial, setAgreedAntiSocial] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleClickSubmit = () => {
     if (!agreedAntiSocial || !agreedTerms) {
       alert('反社会的勢力ではないことの確約および、利用規約への同意が必要です。');
       return;
@@ -48,7 +47,7 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {errorMessage && (
         <div style={{ background: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '8px', fontSize: '13px' }}>
           ⚠️ {errorMessage}
@@ -86,7 +85,8 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
           修正する
         </button>
         <button
-          type="submit"
+          type="button"
+          onClick={handleClickSubmit}
           disabled={loading || !agreedAntiSocial || !agreedTerms}
           style={{ 
             width: '50%', 
@@ -102,6 +102,6 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
           {loading ? '登録処理中...' : '登録を申請する (審査待ち)'}
         </button>
       </div>
-    </form>
+    </div>
   );
 }
