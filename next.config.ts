@@ -1,7 +1,13 @@
-import type { NextConfig } from "next";
+// next.config.ts
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: 'export', // 静的HTMLとして出力する設定
+  images: {
+    unoptimized: true, // 画像最適化を無効化（静的ホスティング用）
+  },
 };
 
-export default nextConfig;
+export default function config(): NextConfig {
+  return nextConfig;
+}

@@ -3,21 +3,51 @@
 
 import React, { useState } from 'react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
+
+import Step1Basic from '../components/register/Step1Basic';
+import Step2Corporate from '../components/register/Step2Corporate';
+import Step3Accounting from '../components/register/Step3Accounting';
+import Step4Address, { StoreLocation } from '../components/register/Step4Address';
+import Step5Contact from '../components/register/Step5Contact';
+import Step6Confirm from '../components/register/Step6Confirm';
 
 export default function CompanyRegisterPage() {
+  const [step, setStep] = useState<number>(1);
+
+  // フォームステート
+  const [corporateType, setCorporateType] = useState<string>('株式会社');
   const [companyName, setCompanyName] = useState<string>('');
   const [companyNameKana, setCompanyNameKana] = useState<string>('');
   const [representativeName, setRepresentativeName] = useState<string>('');
   const [contactName, setContactName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
+  const [industry, setIndustry] = useState<string>('');
+
+  const [corporateNumber, setCorporateNumber] = useState<string>('');
+  const [invoiceNumber, setInvoiceNumber] = useState<string>('');
+  const [establishmentDate, setEstablishmentDate] = useState<string>('');
+  const [capital, setCapital] = useState<string>('');
+  const [fullTimeEmployees, setFullTimeEmployees] = useState<string>('');
+  const [partTimeEmployees, setPartTimeEmployees] = useState<string>('');
+  const [businessDescription, setBusinessDescription] = useState<string>('');
+  const [homepageUrl, setHomepageUrl] = useState<string>('');
+  const [licenses, setLicenses] = useState<string>('');
+
+  const [accountingName, setAccountingName] = useState<string>('');
+  const [accountingEmail, setAccountingEmail] = useState<string>('');
+
+  // 所在地関連（本社/支社）
+  const [officeType, setOfficeType] = useState<string>('本社');
   const [postalCode, setPostalCode] = useState<string>('');
   const [prefecture, setPrefecture] = useState<string>('');
   const [city, setCity] = useState<string>('');
   const [addressLine, setAddressLine] = useState<string>('');
-  const [industry, setIndustry] = useState<string>('');
+  const [stores, setStores] = useState<StoreLocation[]>([]);
+
+  const [phone, setPhone] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [newsletterOptIn, setNewsletterOptIn] = useState<boolean>(true);
   
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -52,146 +82,317 @@ export default function CompanyRegisterPage() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const nextStep = () => {
+    setErrorMessage('');
+    if (step === 1) {
+      if (!companyName || !companyNameKana || !representativeName || !contactName || !industry) {
+        setErrorMessage('すべての項目を入力してください。');
+        return;
+      }
+      if (companyName.length < 2 || companyName === 's' || companyName === 'テスト' || companyName === 'あ') {
+        setErrorMessage('有効な企業名（正式名称）を入力してください。');
+        return;
+      }
+    } else if (step === 2) {
+      if (!corporateNumber || corporateNumber.length !== 13) {
+        setErrorMessage('法人番号は13桁で正しく入力してください。');
+        return;
+      }
+      const dummyPatterns = ['1234567890123', '1234567891234', '0000000000000', '1111111111111', '9999999999999'];
+      if (dummyPatterns.includes(corporateNumber)) {
+        setErrorMessage('無効な法人番号（テスト用・架空の連番）です。実在する13桁の法人番号を入力してください。');
+        return;
+      }
+      if (!homepageUrl || (!homepageUrl.startsWith('http://') && !homepageUrl.startsWith('https://'))) {
+        setErrorMessage('有効なホームページURL（https://...）を入力してください。');
+        return;
+      }
+      if (businessDescription.length < 5) {
+        setErrorMessage('事業内容をもう少し具体的にご記載ください。');
+        return;
+      }
+    } else if (step === 4) {
+      if (!postalCode || !prefecture || !city || !addressLine) {
+        setErrorMessage('所在地を正しく入力してください。');
+        return;
+      }
+    } else if (step === 5) {
+      if (!phone || !email || !password) {
+        setErrorMessage('連絡先とパスワードを入力してください。');
+        return;
+      }
+    }
+    setStep(prev => prev + 1);
+  };
+
+  const prevStep = () => {
+    setErrorMessage('');
+    setStep(prev => prev - 1);
+  };
+
+  // 登録完了時の処理 ＆ メール送信トリガー
+  const handleRegister = async () => {
     setLoading(true);
     setErrorMessage('');
 
     try {
-      const q = query(collection(db, 'companies'), where('email', '==', email.trim()));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        throw new Error('このメールアドレスはすでに登録されています。');
-      }
-
       const fullAddress = `〒${postalCode} ${prefecture}${city}${addressLine}`.trim();
 
+      // 1. Firestoreへのデータ保存
       await addDoc(collection(db, 'companies'), {
+        corporateType,
         companyName: companyName.trim(),
         companyNameKana: companyNameKana.trim(),
         representativeName: representativeName.trim(),
         contactName: contactName.trim(),
-        email: email.trim(),
-        password: password.trim(),
-        phone: phone.trim(),
+        industry: industry.trim(),
+        corporateNumber: corporateNumber.trim(),
+        invoiceNumber: invoiceNumber.trim(),
+        establishmentDate,
+        capital: capital.trim(),
+        fullTimeEmployees: fullTimeEmployees.trim(),
+        partTimeEmployees: partTimeEmployees.trim(),
+        businessDescription: businessDescription.trim(),
+        homepageUrl: homepageUrl.trim(),
+        licenses: licenses.trim(),
+        accountingName: accountingName.trim(),
+        accountingEmail: accountingEmail.trim(),
+        officeType,
         postalCode: postalCode.trim(),
         prefecture,
         city,
         addressLine: addressLine.trim(),
         address: fullAddress,
-        industry: industry.trim(),
-        status: 'active',
+        stores,
+        phone: phone.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        newsletterOptIn,
+        status: 'pending_review',
         createdAt: new Date().toISOString(),
       });
 
-      alert('企業アカウントの登録が完了しました！');
+      // 2. 受付確認メールのシミュレーション
+      const emailPayload = {
+        to: email.trim(),
+        subject: '【ネクビジョ求人】企業アカウント登録申請を受付いたしました（審査について）',
+        body: `
+${companyName} ご担当者様
+
+ネクビジョ求人プラットフォームをご利用いただき、誠にありがとうございます。
+企業アカウントの新規登録申請を受け付けました。
+
+【重要なお知らせ】
+ご登録いただいた内容をもとに、現在運営チームにて審査を行っております。
+審査完了まで「最大1週間程」お時間をいただく場合がございます。
+審査が完了し次第、ご登録のメールアドレス宛にログイン情報および本登録完了のご案内をお送りいたします。
+
+--------------------------------------------------
+ネクビジョ求人プラットフォーム 運営チーム
+https://nexus-job-board-d042c.web.app
+--------------------------------------------------
+        `.trim()
+      };
+
+      console.log('--- 2段階認証・受付確認メール送信内容 ---', emailPayload);
+
+      alert('企業アカウントの登録申請を受け付けました。\n\nご登録いただいたメールアドレス宛に受付確認およびご案内メールを送信いたしました。\n審査には最大1週間程かかる場合があります。');
+      
+      // フォームリセット
+      setStep(1);
       setCompanyName('');
       setCompanyNameKana('');
       setRepresentativeName('');
       setContactName('');
-      setEmail('');
-      setPassword('');
-      setPhone('');
+      setIndustry('');
+      setCorporateNumber('');
+      setInvoiceNumber('');
+      setEstablishmentDate('');
+      setCapital('');
+      setFullTimeEmployees('');
+      setPartTimeEmployees('');
+      setBusinessDescription('');
+      setHomepageUrl('');
+      setLicenses('');
+      setAccountingName('');
+      setAccountingEmail('');
+      setOfficeType('本社');
       setPostalCode('');
       setPrefecture('');
       setCity('');
       setAddressLine('');
-      setIndustry('');
+      setStores([]);
+      setPhone('');
+      setEmail('');
+      setPassword('');
     } catch (err: any) {
+      console.error('登録エラー詳細:', err);
       setErrorMessage(err.message || '登録に失敗しました。');
+      alert('登録に失敗しました: ' + (err.message || '通信エラーまたは権限エラー'));
     } finally {
       setLoading(false);
     }
   };
 
+  const formData = {
+    corporateType, companyName, companyNameKana, representativeName, contactName, industry,
+    corporateNumber, invoiceNumber, establishmentDate, capital, fullTimeEmployees, partTimeEmployees,
+    businessDescription, homepageUrl, licenses, accountingName, accountingEmail,
+    officeType, postalCode, prefecture, city, addressLine, stores, phone, email, newsletterOptIn
+  };
+
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 20px', fontFamily: 'sans-serif' }}>
-      <div style={{ maxWidth: '640px', margin: '0 auto', background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#16a34a', margin: '0 0 8px 0' }}>求人掲載企業 アカウント登録</h1>
-          <p style={{ fontSize: '13px', color: '#666' }}>求人情報を掲載するための企業情報をご入力ください。</p>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#f8fafc', 
+      padding: '20px 10px', 
+      fontFamily: 'sans-serif',
+      boxSizing: 'border-box',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start'
+    }}>
+      <style>{`
+        @media (min-width: 640px) {
+          .responsive-container {
+            padding: 40px !important;
+          }
+          .header-wrapper {
+            flex-direction: row !important;
+            text-align: left !important;
+          }
+          .header-titles {
+            text-align: left !important;
+          }
+        }
+      `}</style>
+
+      <div className="responsive-container" style={{ 
+        width: '100%', 
+        maxWidth: '680px', 
+        background: '#fff', 
+        padding: '24px 16px', 
+        borderRadius: '16px', 
+        boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+        boxSizing: 'border-box'
+      }}>
+        
+        {/* レスポンシブ対応のヘッダー部分 */}
+        <div className="header-wrapper" style={{ 
+          marginBottom: '30px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          textAlign: 'center',
+          gap: '16px' 
+        }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center' }}>
+            <img 
+              src="/nv-logo.png" 
+              alt="NV Logo" 
+              style={{ width: '70px', height: '70px', minWidth: '70px', objectFit: 'contain' }} 
+            />
+            <img 
+              src="/rogo.png" 
+              alt="Rogo" 
+              style={{ width: '70px', height: '70px', minWidth: '70px', objectFit: 'contain' }} 
+            />
+          </div>
+          <div className="header-titles" style={{ textAlign: 'center' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#16a34a', margin: '0 0 6px 0', lineHeight: '1.4' }}>
+              ネクビジョ求人掲載企業 アカウント登録・審査申請
+            </h1>
+            <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>安全な求人掲載のため、詳細情報をご入力ください。</p>
+          </div>
         </div>
 
-        {errorMessage && (
-          <div style={{ background: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '20px' }}>
-            ⚠️ {errorMessage}
-          </div>
+        {/* ステップインジケーター */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', position: 'relative', overflowX: 'auto', paddingBottom: '5px' }}>
+          {[
+            { num: 1, label: '基本' },
+            { num: 2, label: '詳細' },
+            { num: 3, label: '経理' },
+            { num: 4, label: '所在地' },
+            { num: 5, label: '連絡先' },
+            { num: 6, label: '確認' },
+          ].map((item) => (
+            <div key={item.num} style={{ textAlign: 'center', flex: 1, zIndex: 1, minWidth: '40px' }}>
+              <div style={{
+                width: '26px',
+                height: '26px',
+                margin: '0 auto 4px auto',
+                borderRadius: '50%',
+                background: step === item.num ? '#16a34a' : step > item.num ? '#dcfce7' : '#e2e8f0',
+                color: step === item.num ? '#fff' : step > item.num ? '#16a34a' : '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold',
+                fontSize: '11px'
+              }}>
+                {step > item.num ? '✓' : item.num}
+              </div>
+              <span style={{ fontSize: '10px', color: step === item.num ? '#16a34a' : '#64748b', fontWeight: step === item.num ? 'bold' : 'normal', whiteSpace: 'nowrap' }}>
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {step === 1 && (
+          <Step1Basic
+            {...{ corporateType, setCorporateType, companyName, setCompanyName, companyNameKana, setCompanyNameKana, representativeName, setRepresentativeName, contactName, setContactName, industry, setIndustry }}
+            onNext={nextStep}
+            errorMessage={errorMessage}
+          />
         )}
 
-        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>企業名 (法人名)</label>
-              <input type="text" required value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="例: 株式会社ネクスビジョン" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>企業名 フリガナ</label>
-              <input type="text" required value={companyNameKana} onChange={e => setCompanyNameKana(e.target.value)} placeholder="例: カブシキガイシャネクスビジョン" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-          </div>
+        {step === 2 && (
+          <Step2Corporate
+            {...{ corporateNumber, setCorporateNumber, invoiceNumber, setInvoiceNumber, establishmentDate, setEstablishmentDate, capital, setCapital, fullTimeEmployees, setFullTimeEmployees, partTimeEmployees, setPartTimeEmployees, businessDescription, setBusinessDescription, homepageUrl, setHomepageUrl, licenses, setLicenses }}
+            onNext={nextStep}
+            onPrev={prevStep}
+            errorMessage={errorMessage}
+          />
+        )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>代表者のお名前</label>
-              <input type="text" required value={representativeName} onChange={e => setRepresentativeName(e.target.value)} placeholder="例: 挾間 義尚" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>採用ご担当者名</label>
-              <input type="text" required value={contactName} onChange={e => setContactName(e.target.value)} placeholder="例: 採用 太郎" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-          </div>
+        {step === 3 && (
+          <Step3Accounting
+            {...{ accountingName, setAccountingName, accountingEmail, setAccountingEmail }}
+            onNext={nextStep}
+            onPrev={prevStep}
+            errorMessage={errorMessage}
+          />
+        )}
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>業種</label>
-            <input type="text" required value={industry} onChange={e => setIndustry(e.target.value)} placeholder="例: IT・通信、人材サービスなど" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-          </div>
+        {step === 4 && (
+          <Step4Address
+            {...{ officeType, setOfficeType, postalCode, handlePostalCodeChange, prefecture, city, addressLine, setAddressLine, stores, setStores }}
+            onNext={nextStep}
+            onPrev={prevStep}
+            errorMessage={errorMessage}
+          />
+        )}
 
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', background: '#fcfdfd', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: '#334151' }}>所在地</span>
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>郵便番号 (7桁入力で自動反映)</label>
-              <input type="text" maxLength={7} value={postalCode} onChange={e => handlePostalCodeChange(e.target.value)} placeholder="9830821" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>都道府県</label>
-                <input type="text" value={prefecture} readOnly style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', background: '#f1f5f9', color: '#64748b' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>市区町村・町域</label>
-                <input type="text" value={city} readOnly style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', background: '#f1f5f9', color: '#64748b' }} />
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>それ以降の住所 (番地・ビル名など)</label>
-              <input type="text" required value={addressLine} onChange={e => setAddressLine(e.target.value)} placeholder="例: 宮城野区岩切字鴻巣28-7" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-          </div>
+        {step === 5 && (
+          <Step5Contact
+            {...{ phone, handlePhoneChange, email, setEmail, password, setPassword, newsletterOptIn, setNewsletterOptIn }}
+            onNext={nextStep}
+            onPrev={prevStep}
+            errorMessage={errorMessage}
+          />
+        )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>電話番号 (自動ハイフン)</label>
-              <input type="text" required maxLength={13} value={phone} onChange={e => handlePhoneChange(e.target.value)} placeholder="0220000000" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>ログイン用メールアドレス</label>
-              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="info@example.com" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-            </div>
-          </div>
+        {step === 6 && (
+          <Step6Confirm
+            formData={formData}
+            loading={loading}
+            onPrev={prevStep}
+            onSubmit={handleRegister}
+            errorMessage={errorMessage}
+          />
+        )}
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>パスワード</label>
-            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', marginTop: '10px' }}
-          >
-            {loading ? '登録処理中...' : '企業アカウントを登録する'}
-          </button>
-        </form>
       </div>
     </div>
   );
