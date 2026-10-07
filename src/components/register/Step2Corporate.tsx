@@ -20,7 +20,6 @@ interface Props {
   setHomepageUrl: (val: string) => void;
   licenses: string;
   setLicenses: (val: string) => void;
-  // 親から自動取得用のセッターを受け取る場合
   onAutoFill?: (data: { name: string; postCode: string; prefecture: string; city: string; addressLine: string }) => void;
   onNext: () => void;
   onPrev: () => void;
@@ -71,14 +70,10 @@ export default function Step2Corporate({
     }
   };
 
-  // ── 必須項目の判定（ホームページURLを任意に変更したため除外） ──
+  // ── 必須項目の判定（法人番号と事業内容のみ必須とし、他は柔軟に） ──
   const isFormComplete = 
     Boolean(corporateNumber && corporateNumber.trim().length === 13) &&
-    Boolean(establishmentDate && establishmentDate.trim()) &&
-    Boolean(capital && capital.trim()) &&
-    Boolean(fullTimeEmployees && fullTimeEmployees.trim()) &&
-    Boolean(businessDescription && businessDescription.trim()) &&
-    Boolean(licenses && licenses.trim());
+    Boolean(businessDescription && businessDescription.trim());
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -127,17 +122,17 @@ export default function Step2Corporate({
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>設立年月日</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>設立年月日 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span></label>
           <input type="date" value={establishmentDate} onChange={e => setEstablishmentDate(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>資本金</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>資本金 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span></label>
           <input type="text" value={capital} onChange={e => setCapital(e.target.value)} placeholder="例: 1,000万円" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
         </div>
       </div>
 
       <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', background: '#fcfdfd', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <span style={{ fontSize: '13px', fontWeight: '700', color: '#334151' }}>従業員規模の詳細</span>
+        <span style={{ fontSize: '13px', fontWeight: '700', color: '#334151' }}>従業員規模の詳細 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span></span>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>正社員数</label>
@@ -163,7 +158,7 @@ export default function Step2Corporate({
       </div>
 
       <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>許認可・資格の有無</label>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>許認可・資格の有無 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span></label>
         <input 
           type="text" 
           value={licenses} 
