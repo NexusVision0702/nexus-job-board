@@ -71,13 +71,12 @@ export default function Step2Corporate({
     }
   };
 
-  // ── インボイス番号以外の必須項目がすべて埋まっているかの判定 ──
+  // ── 必須項目の判定（ホームページURLを任意に変更したため除外） ──
   const isFormComplete = 
     Boolean(corporateNumber && corporateNumber.trim().length === 13) &&
     Boolean(establishmentDate && establishmentDate.trim()) &&
     Boolean(capital && capital.trim()) &&
     Boolean(fullTimeEmployees && fullTimeEmployees.trim()) &&
-    Boolean(homepageUrl && homepageUrl.trim()) &&
     Boolean(businessDescription && businessDescription.trim()) &&
     Boolean(licenses && licenses.trim());
 
@@ -85,7 +84,7 @@ export default function Step2Corporate({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {errorMessage && (
         <div style={{ background: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '8px', fontSize: '13px' }}>
-      ⚠️ {errorMessage}
+          ⚠️ {errorMessage}
         </div>
       )}
 
@@ -152,7 +151,9 @@ export default function Step2Corporate({
       </div>
 
       <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>ホームページURL</label>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+          ホームページURL <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span>
+        </label>
         <input type="url" value={homepageUrl} onChange={e => setHomepageUrl(e.target.value)} placeholder="https://example.com" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
       </div>
 
