@@ -43,6 +43,7 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
   const [isSent, setIsSent] = useState(false);
   const [inputCode, setInputCode] = useState('');
   const [isVerified, setIsVerified] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // 業種が配列の場合を考慮して安全に文字列化するヘルパー
   const renderIndustry = () => {
@@ -52,13 +53,36 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
     return typeof formData.industry === 'string' ? formData.industry : '';
   };
 
-  // 二段階認証メールを送信（モック）
-  const handleSendVerificationCode = () => {
-    // 6桁のランダムな認証コードを生成
+  // 二段階認証メールを送信（API経由）
+  const handleSendVerificationCode = async () => {
     const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setSentCode(mockCode);
-    setIsSent(true);
-    alert(`【テスト送信】\nログイン用メールアドレス (${formData.email}) 宛に二段階認証コードを送信しました。\n(確認コード: ${mockCode})`);
+    setIsSending(true);
+
+    try {
+      const response = await fetch('/api/send-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          code: mockCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'メールの送信に失敗しました');
+      }
+
+      setSentCode(mockCode);
+      setIsSent(true);
+    } catch (error) {
+      alert(`エラー: ${(error as Error).message}`);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // 入力されたコードの検証
@@ -120,9 +144,10 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
           <button 
             type="button" 
             onClick={handleSendVerificationCode}
-            style={{ padding: '10px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '12px' }}
+            disabled={isSending}
+            style={{ padding: '10px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: isSending ? 'not-allowed' : 'pointer', fontSize: '12px' }}
           >
-            {isSent ? '認証コードを再送信' : '認証コードをメールで送信'}
+            {isSending ? '送信中...' : (isSent ? '認証コードを再送信' : '認証コードをメールで送信')}
           </button>
           {isSent && <span style={{ fontSize: '12px', color: '#16a34a' }}>✓ 送信済み</span>}
         </div>
