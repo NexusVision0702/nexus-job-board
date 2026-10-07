@@ -103,7 +103,8 @@ export default function CompanyRegisterPage() {
         setErrorMessage('無効な法人番号（テスト用・架空の連番）です。実在する13桁の法人番号を入力してください。');
         return;
       }
-      if (!homepageUrl || (!homepageUrl.startsWith('http://') && !homepageUrl.startsWith('https://'))) {
+      // ホームページURLが入力されている場合のみ、URL形式をチェックする（任意項目のため）
+      if (homepageUrl && homepageUrl.trim() !== '' && (!homepageUrl.startsWith('http://') && !homepageUrl.startsWith('https://'))) {
         setErrorMessage('有効なホームページURL（https://...）を入力してください。');
         return;
       }
