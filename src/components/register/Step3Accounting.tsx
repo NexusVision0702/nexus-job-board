@@ -16,6 +16,10 @@ export default function Step3Accounting({
   accountingEmail, setAccountingEmail,
   onNext, onPrev, errorMessage
 }: Props) {
+  const isFormComplete = 
+    Boolean(accountingName && accountingName.trim()) &&
+    Boolean(accountingEmail && accountingEmail.trim());
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {errorMessage && (
@@ -24,18 +28,32 @@ export default function Step3Accounting({
         </div>
       )}
 
-      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <span style={{ fontSize: '13px', fontWeight: '700', color: '#334151' }}>請求書送付先・経理担当者情報</span>
-        <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>有料プランや掲載料の請求書送付に関する宛先となります（採用担当者さまと同一の場合はその旨またはご担当者様名をご入力ください）。</p>
+      <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', background: '#fcfdfd', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div>
+          <span style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', display: 'block', marginBottom: '4px' }}>請求書送付先・経理担当者情報</span>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>有料プランや掲載料の請求書送付に関する宛先となります。</span>
+        </div>
 
         <div>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>経理ご担当者名 (または部署名)</label>
-          <input type="text" value={accountingName} onChange={e => setAccountingName(e.target.value)} placeholder="例: 経理部 財務課 鈴木" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+          <input 
+            type="text" 
+            value={accountingName} 
+            onChange={e => setAccountingName(e.target.value)} 
+            placeholder="例: 経理部 財務課 求人太郎" 
+            style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
+          />
         </div>
 
         <div>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>請求書送付用メールアドレス</label>
-          <input type="email" value={accountingEmail} onChange={e => setAccountingEmail(e.target.value)} placeholder="accounting@example.co.jp" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+          <input 
+            type="email" 
+            value={accountingEmail} 
+            onChange={e => setAccountingEmail(e.target.value)} 
+            placeholder="accounting@example.co.jp" 
+            style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
+          />
         </div>
       </div>
 
@@ -43,8 +61,23 @@ export default function Step3Accounting({
         <button type="button" onClick={onPrev} style={{ width: '50%', padding: '14px', background: '#e2e8f0', color: '#334151', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>
           戻る
         </button>
-        <button type="button" onClick={onNext} style={{ width: '50%', padding: '14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>
-          次へ進む ➔
+        <button 
+          type="button" 
+          onClick={onNext} 
+          disabled={!isFormComplete}
+          style={{ 
+            width: '50%', 
+            padding: '14px', 
+            background: isFormComplete ? '#16a34a' : '#94a3b8', 
+            color: '#fff', 
+            border: 'none', 
+            borderRadius: '10px', 
+            fontWeight: '700', 
+            cursor: isFormComplete ? 'pointer' : 'not-allowed',
+            transition: 'background 0.2s'
+          }}
+        >
+          {isFormComplete ? '次へ進む ➔' : '未入力項目があります'}
         </button>
       </div>
     </div>

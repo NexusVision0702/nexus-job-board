@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 // 店舗データの型定義
 export interface StoreLocation {
-  name: string; // 店舗名（例: 仙台支店、泉店）
+  name: string; // 店舗名（例: NexusVision仙台駅前店）
   postalCode: string;
   prefecture: string;
   city: string;
@@ -86,6 +86,13 @@ export default function Step4Address({
     setStores(stores.filter((_, i) => i !== index));
   };
 
+  // 本社の所在地（必須）がすべて入力されているかの判定
+  const isFormComplete = 
+    Boolean(postalCode && postalCode.trim().length === 7) &&
+    Boolean(prefecture && prefecture.trim()) &&
+    Boolean(city && city.trim()) &&
+    Boolean(addressLine && addressLine.trim());
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {errorMessage && (
@@ -123,7 +130,7 @@ export default function Step4Address({
 
       {/* メイン所在地入力 */}
       <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <span style={{ fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>{officeType}の所在地</span>
+        <span style={{ fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>{officeType}の所在地（必須）</span>
         
         <div>
           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>郵便番号 (7桁入力で自動反映)</label>
@@ -132,7 +139,7 @@ export default function Step4Address({
             maxLength={7} 
             value={postalCode} 
             onChange={e => handlePostalCodeChange(e.target.value)} 
-            placeholder="例: 9830821" 
+            placeholder="例: 9800021" 
             style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
           />
         </div>
@@ -154,7 +161,7 @@ export default function Step4Address({
             type="text" 
             value={addressLine} 
             onChange={e => setAddressLine(e.target.value)} 
-            placeholder="例: 岩切1-1-1 ビル名2F" 
+            placeholder="例: 中央1-1-1" 
             style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
           />
         </div>
@@ -187,7 +194,7 @@ export default function Step4Address({
         <div style={{ background: '#fdfbf7', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>店舗名・拠点名</label>
-            <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="例: 仙台駅前店" style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box', background: '#fff' }} />
+            <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="例: NexusVision仙台駅前店" style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box', background: '#fff' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '8px' }}>
             <div>
@@ -213,8 +220,23 @@ export default function Step4Address({
         <button type="button" onClick={onPrev} style={{ width: '50%', padding: '14px', background: '#e2e8f0', color: '#334151', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>
           戻る
         </button>
-        <button type="button" onClick={onNext} style={{ width: '50%', padding: '14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>
-          次へ進む ➔
+        <button 
+          type="button" 
+          onClick={onNext} 
+          disabled={!isFormComplete}
+          style={{ 
+            width: '50%', 
+            padding: '14px', 
+            background: isFormComplete ? '#16a34a' : '#94a3b8', 
+            color: '#fff', 
+            border: 'none', 
+            borderRadius: '10px', 
+            fontWeight: '700', 
+            cursor: isFormComplete ? 'pointer' : 'not-allowed',
+            transition: 'background 0.2s'
+          }}
+        >
+          {isFormComplete ? '次へ進む ➔' : '本社の所在地を入力してください'}
         </button>
       </div>
     </div>

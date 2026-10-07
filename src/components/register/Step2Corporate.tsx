@@ -71,6 +71,16 @@ export default function Step2Corporate({
     }
   };
 
+  // ── インボイス番号以外の必須項目がすべて埋まっているかの判定 ──
+  const isFormComplete = 
+    Boolean(corporateNumber && corporateNumber.trim().length === 13) &&
+    Boolean(establishmentDate && establishmentDate.trim()) &&
+    Boolean(capital && capital.trim()) &&
+    Boolean(fullTimeEmployees && fullTimeEmployees.trim()) &&
+    Boolean(homepageUrl && homepageUrl.trim()) &&
+    Boolean(businessDescription && businessDescription.trim()) &&
+    Boolean(licenses && licenses.trim());
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {errorMessage && (
@@ -104,8 +114,16 @@ export default function Step2Corporate({
       </div>
 
       <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>適格請求書発行事業者登録番号 (インボイス)</label>
-        <input type="text" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="例: T1234567890123 (任意)" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+          適格請求書発行事業者登録番号 (インボイス) <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span>
+        </label>
+        <input 
+          type="text" 
+          value={invoiceNumber} 
+          onChange={e => setInvoiceNumber(e.target.value)} 
+          placeholder="例: T1234567890123" 
+          style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
+        />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
@@ -145,15 +163,36 @@ export default function Step2Corporate({
 
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>許認可・資格の有無</label>
-        <input type="text" value={licenses} onChange={e => setLicenses(e.target.value)} placeholder="例: 有料職業紹介事業許可 13-ユ-000000" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+        <input 
+          type="text" 
+          value={licenses} 
+          onChange={e => setLicenses(e.target.value)} 
+          placeholder="例: 有料職業紹介事業許可 13-ユ-000000 または 特になし" 
+          style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
+        />
       </div>
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <button type="button" onClick={onPrev} style={{ width: '50%', padding: '14px', background: '#e2e8f0', color: '#334151', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>
           戻る
         </button>
-        <button type="button" onClick={onNext} style={{ width: '50%', padding: '14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}>
-          次へ進む ➔
+        <button 
+          type="button" 
+          onClick={onNext} 
+          disabled={!isFormComplete}
+          style={{ 
+            width: '50%', 
+            padding: '14px', 
+            background: isFormComplete ? '#16a34a' : '#94a3b8', 
+            color: '#fff', 
+            border: 'none', 
+            borderRadius: '10px', 
+            fontWeight: '700', 
+            cursor: isFormComplete ? 'pointer' : 'not-allowed',
+            transition: 'background 0.2s'
+          }}
+        >
+          {isFormComplete ? '次へ進む ➔' : '未入力項目があります'}
         </button>
       </div>
     </div>
