@@ -88,7 +88,7 @@ export default function Step1Basic({
 
   const selectedIndustries: string[] = Array.isArray(industry) 
     ? industry 
-    : (industry ? industry.split(',').map(s => s.trim()).filter(Boolean) : []);
+    : (industry ? String(industry).split(',').map(s => String(s || '').trim()).filter(Boolean) : []);
 
   const handleIndustryToggle = (ind: string) => {
     if (selectedIndustries.includes(ind)) {
@@ -100,13 +100,13 @@ export default function Step1Basic({
     }
   };
 
-  // すべての入力・選択が完了しているかどうかの判定
+  // すべての入力・選択が完了しているかどうかの判定（安全にString変換してtrimを実行）
   const isFormComplete = 
-    Boolean(corporateType && corporateType.trim()) &&
-    Boolean(companyName && companyName.trim() && companyName.length >= 2) &&
-    Boolean(companyNameKana && companyNameKana.trim()) &&
-    Boolean(representativeName && representativeName.trim()) &&
-    Boolean(contactName && contactName.trim()) &&
+    Boolean(String(corporateType || '').trim()) &&
+    Boolean(String(companyName || '').trim() && String(companyName || '').length >= 2) &&
+    Boolean(String(companyNameKana || '').trim()) &&
+    Boolean(String(representativeName || '').trim()) &&
+    Boolean(String(contactName || '').trim()) &&
     selectedIndustries.length > 0;
 
   return (
@@ -120,7 +120,7 @@ export default function Step1Basic({
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>法人格</label>
         <select 
-          value={corporateType} 
+          value={corporateType || ''} 
           onChange={e => setCorporateType(e.target.value)} 
           style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }}
         >
@@ -137,7 +137,7 @@ export default function Step1Basic({
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>企業名 (法人名)</label>
           <input 
             type="text" 
-            value={companyName} 
+            value={companyName || ''} 
             onChange={e => setCompanyName(e.target.value)} 
             placeholder="NexusVision株式会社" 
             style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
@@ -148,7 +148,7 @@ export default function Step1Basic({
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>企業名 フリガナ</label>
           <input 
             type="text" 
-            value={companyNameKana} 
+            value={companyNameKana || ''} 
             onChange={e => setCompanyNameKana(e.target.value)} 
             placeholder="ネクサスビジョンカブシキガイシャ" 
             style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
@@ -161,7 +161,7 @@ export default function Step1Basic({
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>代表者のお名前</label>
           <input 
             type="text" 
-            value={representativeName} 
+            value={representativeName || ''} 
             onChange={e => setRepresentativeName(e.target.value)} 
             placeholder="求人 太郎" 
             style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
@@ -171,7 +171,7 @@ export default function Step1Basic({
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>採用ご担当者名</label>
           <input 
             type="text" 
-            value={contactName} 
+            value={contactName || ''} 
             onChange={e => setContactName(e.target.value)} 
             placeholder="求人 次郎" 
             style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 

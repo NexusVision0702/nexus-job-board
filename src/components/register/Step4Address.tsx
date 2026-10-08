@@ -68,11 +68,11 @@ export default function Step4Address({
       return;
     }
     setStores([...stores, {
-      name: storeName.trim(),
-      postalCode: storePostalCode.trim(),
+      name: String(storeName || '').trim(),
+      postalCode: String(storePostalCode || '').trim(),
       prefecture: storePrefecture,
       city: storeCity,
-      addressLine: storeAddressLine.trim()
+      addressLine: String(storeAddressLine || '').trim()
     }]);
     // 入力欄をクリア
     setStoreName('');
@@ -86,12 +86,12 @@ export default function Step4Address({
     setStores(stores.filter((_, i) => i !== index));
   };
 
-  // 本社の所在地（必須）がすべて入力されているかの判定
+  // 本社の所在地（必須）がすべて入力されているかの判定（安全にString変換してtrimを実行）
   const isFormComplete = 
-    Boolean(postalCode && postalCode.trim().length === 7) &&
-    Boolean(prefecture && prefecture.trim()) &&
-    Boolean(city && city.trim()) &&
-    Boolean(addressLine && addressLine.trim());
+    Boolean(String(postalCode || '').trim().length === 7) &&
+    Boolean(String(prefecture || '').trim()) &&
+    Boolean(String(city || '').trim()) &&
+    Boolean(String(addressLine || '').trim());
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -137,7 +137,7 @@ export default function Step4Address({
           <input 
             type="text" 
             maxLength={7} 
-            value={postalCode} 
+            value={postalCode || ''} 
             onChange={e => handlePostalCodeChange(e.target.value)} 
             placeholder="例: 9800021" 
             style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
@@ -147,11 +147,11 @@ export default function Step4Address({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>都道府県</label>
-            <input type="text" value={prefecture} readOnly placeholder="自動入力" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6' }} />
+            <input type="text" value={prefecture || ''} readOnly placeholder="自動入力" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>市区町村・町域</label>
-            <input type="text" value={city} readOnly placeholder="自動入力" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6' }} />
+            <input type="text" value={city || ''} readOnly placeholder="自動入力" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6' }} />
           </div>
         </div>
 
@@ -159,7 +159,7 @@ export default function Step4Address({
           <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>それ以降の住所 (番地・ビル名など)</label>
           <input 
             type="text" 
-            value={addressLine} 
+            value={addressLine || ''} 
             onChange={e => setAddressLine(e.target.value)} 
             placeholder="例: 中央1-1-1" 
             style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 

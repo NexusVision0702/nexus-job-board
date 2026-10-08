@@ -17,8 +17,8 @@ export default function Step3Accounting({
   onNext, onPrev, errorMessage
 }: Props) {
   const isFormComplete = 
-    Boolean(accountingName && accountingName.trim()) &&
-    Boolean(accountingEmail && accountingEmail.trim());
+    Boolean(String(accountingName || '').trim()) &&
+    Boolean(String(accountingEmail || '').trim());
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -38,7 +38,7 @@ export default function Step3Accounting({
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>経理ご担当者名 (または部署名)</label>
           <input 
             type="text" 
-            value={accountingName} 
+            value={accountingName || ''} 
             onChange={e => setAccountingName(e.target.value)} 
             placeholder="例: 経理部 財務課 求人太郎" 
             style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
@@ -49,7 +49,7 @@ export default function Step3Accounting({
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>請求書送付用メールアドレス</label>
           <input 
             type="email" 
-            value={accountingEmail} 
+            value={accountingEmail || ''} 
             onChange={e => setAccountingEmail(e.target.value)} 
             placeholder="accounting@example.co.jp" 
             style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 

@@ -43,7 +43,8 @@ export default function Step2Corporate({
   const [fetchMessage, setFetchMessage] = useState('');
 
   const handleFetchHoujin = async () => {
-    if (corporateNumber.length !== 13) {
+    const safeCorporateNum = String(corporateNumber || '').trim();
+    if (safeCorporateNum.length !== 13) {
       setFetchMessage('13桁の法人番号を入力してください。');
       return;
     }
@@ -52,7 +53,7 @@ export default function Step2Corporate({
     setFetchMessage('');
 
     try {
-      const res = await fetch(`/api/houjin?number=${corporateNumber}`);
+      const res = await fetch(`/api/houjin?number=${safeCorporateNum}`);
       const json = await res.json();
 
       if (json.success && json.data) {
@@ -70,10 +71,10 @@ export default function Step2Corporate({
     }
   };
 
-  // ── 必須項目の判定（法人番号と事業内容のみ必須とし、他は柔軟に） ──
+  // ── 必須項目の判定（安全にString変換してtrimを実行） ──
   const isFormComplete = 
-    Boolean(corporateNumber && corporateNumber.trim().length === 13) &&
-    Boolean(businessDescription && businessDescription.trim());
+    Boolean(String(corporateNumber || '').trim().length === 13) &&
+    Boolean(String(businessDescription || '').trim());
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -89,7 +90,7 @@ export default function Step2Corporate({
           <input 
             type="text" 
             maxLength={13} 
-            value={corporateNumber} 
+            value={corporateNumber || ''} 
             onChange={e => setCorporateNumber(e.target.value.replace(/[^0-9]/g, ''))} 
             placeholder="例: 1234567890123" 
             style={{ flex: 1, padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
@@ -113,7 +114,7 @@ export default function Step2Corporate({
         </label>
         <input 
           type="text" 
-          value={invoiceNumber} 
+          value={invoiceNumber || ''} 
           onChange={e => setInvoiceNumber(e.target.value)} 
           placeholder="例: T1234567890123" 
           style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
@@ -123,11 +124,11 @@ export default function Step2Corporate({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
         <div>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>設立年月日 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span></label>
-          <input type="date" value={establishmentDate} onChange={e => setEstablishmentDate(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} />
+          <input type="date" value={establishmentDate || ''} onChange={e => setEstablishmentDate(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} />
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>資本金 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span></label>
-          <input type="text" value={capital} onChange={e => setCapital(e.target.value)} placeholder="例: 1,000万円" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+          <input type="text" value={capital || ''} onChange={e => setCapital(e.target.value)} placeholder="例: 1,000万円" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
         </div>
       </div>
 
@@ -136,11 +137,11 @@ export default function Step2Corporate({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>正社員数</label>
-            <input type="text" value={fullTimeEmployees} onChange={e => setFullTimeEmployees(e.target.value)} placeholder="例: 20名" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+            <input type="text" value={fullTimeEmployees || ''} onChange={e => setFullTimeEmployees(e.target.value)} placeholder="例: 20名" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>パート・アルバイト数</label>
-            <input type="text" value={partTimeEmployees} onChange={e => setPartTimeEmployees(e.target.value)} placeholder="例: 5名" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+            <input type="text" value={partTimeEmployees || ''} onChange={e => setPartTimeEmployees(e.target.value)} placeholder="例: 5名" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
           </div>
         </div>
       </div>
@@ -149,19 +150,19 @@ export default function Step2Corporate({
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
           ホームページURL <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span>
         </label>
-        <input type="url" value={homepageUrl} onChange={e => setHomepageUrl(e.target.value)} placeholder="https://example.com" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+        <input type="url" value={homepageUrl || ''} onChange={e => setHomepageUrl(e.target.value)} placeholder="https://example.com" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
       </div>
 
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>事業内容</label>
-        <textarea rows={3} value={businessDescription} onChange={e => setBusinessDescription(e.target.value)} placeholder="具体的な事業内容をご記載ください" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', fontFamily: 'sans-serif' }} />
+        <textarea rows={3} value={businessDescription || ''} onChange={e => setBusinessDescription(e.target.value)} placeholder="具体的な事業内容をご記載ください" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', fontFamily: 'sans-serif' }} />
       </div>
 
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>許認可・資格の有無 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span></label>
         <input 
           type="text" 
-          value={licenses} 
+          value={licenses || ''} 
           onChange={e => setLicenses(e.target.value)} 
           placeholder="例: 有料職業紹介事業許可 13-ユ-000000 または 特になし" 
           style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 

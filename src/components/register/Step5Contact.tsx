@@ -23,9 +23,9 @@ export default function Step5Contact({
   onNext, onPrev, errorMessage
 }: Props) {
 
-  // メールアドレス入力済み ＆ パスワードが8文字以上入力されているかどうかの判定
+  // メールアドレス入力済み ＆ パスワードが8文字以上入力されているかどうかの判定（安全にString変換してtrimを実行）
   const isFormComplete = 
-    Boolean(email && email.trim()) &&
+    Boolean(String(email || '').trim()) &&
     Boolean(password && password.length >= 8);
 
   return (
@@ -38,17 +38,17 @@ export default function Step5Contact({
 
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>電話番号 (自動ハイフン)</label>
-        <input type="text" maxLength={13} value={phone} onChange={e => handlePhoneChange(e.target.value)} placeholder="0220000000" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+        <input type="text" maxLength={13} value={phone || ''} onChange={e => handlePhoneChange(e.target.value)} placeholder="0220000000" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
       </div>
 
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>ログイン用メールアドレス</label>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="info@example.co.jp" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+        <input type="email" value={email || ''} onChange={e => setEmail(e.target.value)} placeholder="info@example.co.jp" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
       </div>
 
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>パスワード (8文字以上)</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="8文字以上で入力してください" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+        <input type="password" value={password || ''} onChange={e => setPassword(e.target.value)} placeholder="8文字以上で入力してください" style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
       </div>
 
       <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>

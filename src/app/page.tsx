@@ -21,7 +21,7 @@ export default function CompanyRegisterPage() {
   const [companyNameKana, setCompanyNameKana] = useState<string>('');
   const [representativeName, setRepresentativeName] = useState<string>('');
   const [contactName, setContactName] = useState<string>('');
-  const [industry, setIndustry] = useState<string>('');
+  const [industry, setIndustry] = useState<any>('');
 
   const [corporateNumber, setCorporateNumber] = useState<string>('');
   const [invoiceNumber, setInvoiceNumber] = useState<string>('');
@@ -53,7 +53,7 @@ export default function CompanyRegisterPage() {
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handlePhoneChange = (val: string) => {
-    const numbers = val.replace(/[^0-9]/g, '');
+    const numbers = String(val || '').replace(/[^0-9]/g, '');
     let formatted = numbers;
     if (numbers.length > 3 && numbers.length <= 7) {
       formatted = `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
@@ -64,7 +64,7 @@ export default function CompanyRegisterPage() {
   };
 
   const handlePostalCodeChange = async (val: string) => {
-    const cleanVal = val.replace(/[^0-9]/g, '').slice(0, 7);
+    const cleanVal = String(val || '').replace(/[^0-9]/g, '').slice(0, 7);
     setPostalCode(cleanVal);
 
     if (cleanVal.length === 7) {
@@ -84,12 +84,13 @@ export default function CompanyRegisterPage() {
 
   const nextStep = () => {
     setErrorMessage('');
+    const safeCompanyName = String(companyName || '');
     if (step === 1) {
       if (!companyName || !companyNameKana || !representativeName || !contactName || !industry) {
         setErrorMessage('すべての項目を入力してください。');
         return;
       }
-      if (companyName.length < 2 || companyName === 's' || companyName === 'テスト' || companyName === 'あ') {
+      if (safeCompanyName.length < 2 || safeCompanyName === 's' || safeCompanyName === 'テスト' || safeCompanyName === 'あ') {
         setErrorMessage('有効な企業名（正式名称）を入力してください。');
         return;
       }
@@ -103,12 +104,11 @@ export default function CompanyRegisterPage() {
         setErrorMessage('無効な法人番号（テスト用・架空の連番）です。実在する13桁の法人番号を入力してください。');
         return;
       }
-      // ホームページURLが入力されている場合のみ、URL形式をチェックする（任意項目のため）
-      if (homepageUrl && homepageUrl.trim() !== '' && (!homepageUrl.startsWith('http://') && !homepageUrl.startsWith('https://'))) {
+      if (homepageUrl && String(homepageUrl).trim() !== '' && (!homepageUrl.startsWith('http://') && !homepageUrl.startsWith('https://'))) {
         setErrorMessage('有効なホームページURL（https://...）を入力してください。');
         return;
       }
-      if (businessDescription.length < 5) {
+      if (String(businessDescription || '').length < 5) {
         setErrorMessage('事業内容をもう少し具体的にご記載ください。');
         return;
       }
@@ -131,44 +131,53 @@ export default function CompanyRegisterPage() {
     setStep(prev => prev - 1);
   };
 
-  // 登録完了時の処理（堅牢版：必ずローディングが解除されます）
+  // 登録完了時の処理（安全にString変換してtrimを実行）
   const handleRegister = async () => {
     console.log('>>> handleRegister 実行開始');
     setLoading(true);
     setErrorMessage('');
 
     try {
-      const fullAddress = `〒${postalCode} ${prefecture}${city}${addressLine}`.trim();
+      const safePostal = String(postalCode || '');
+      const safePref = String(prefecture || '');
+      const safeCity = String(city || '');
+      const safeAddr = String(addressLine || '');
+      const fullAddress = `〒${safePostal} ${safePref}${safeCity}${safeAddr}`.trim();
+
+      // industry が配列の場合に対応
+      const industryStr = Array.isArray(industry) 
+        ? industry.join(', ') 
+        : String(industry || '');
 
       // 1. Firestoreへのデータ保存
       await addDoc(collection(db, 'companies'), {
-        corporateType,
-        companyName: companyName.trim(),
-        companyNameKana: companyNameKana.trim(),
-        representativeName: representativeName.trim(),
-        contactName: contactName.trim(),
-        industry: industry.trim(),
-        corporateNumber: corporateNumber.trim(),
-        invoiceNumber: invoiceNumber.trim(),
-        establishmentDate,
-        capital: capital.trim(),
-        fullTimeEmployees: fullTimeEmployees.trim(),
-        partTimeEmployees: partTimeEmployees.trim(),
-        businessDescription: businessDescription.trim(),
-        homepageUrl: homepageUrl.trim(),
-        licenses: licenses.trim(),
-        accountingName: accountingName.trim(),
-        accountingEmail: accountingEmail.trim(),
-        officeType,
-        postalCode: postalCode.trim(),
-        prefecture,
-        city,
-        addressLine: addressLine.trim(),
+        corporateType: String(corporateType || '').trim(),
+        companyName: String(companyName || '').trim(),
+        companyNameKana: String(companyNameKana || '').trim(),
+        representativeName: String(representativeName || '').trim(),
+        contactName: String(contactName || '').trim(),
+        industry: industryStr.trim(),
+        corporateNumber: String(corporateNumber || '').trim(),
+        invoiceNumber: String(invoiceNumber || '').trim(),
+        establishmentDate: String(establishmentDate || ''),
+        capital: String(capital || '').trim(),
+        fullTimeEmployees: String(fullTimeEmployees || '').trim(),
+        partTimeEmployees: String(partTimeEmployees || '').trim(),
+        businessDescription: String(businessDescription || '').trim(),
+        homepageUrl: String(homepageUrl || '').trim(),
+        licenses: String(licenses || '').trim(),
+        accountingName: String(accountingName || '').trim(),
+        accountingEmail: String(accountingEmail || '').trim(),
+        officeType: String(officeType || '').trim(),
+        postalCode: safePostal.trim(),
+        prefecture: safePref.trim(),
+        city: safeCity.trim(),
+        addressLine: safeAddr.trim(),
         address: fullAddress,
         stores,
-        phone: phone.trim(),
-        email: email.trim(),
-        password: password.trim(),
+        phone: String(phone || '').trim(),
+        email: String(email || '').trim(),
+        password: String(password || '').trim(),
         newsletterOptIn,
         status: 'pending_review',
         createdAt: new Date().toISOString(),
