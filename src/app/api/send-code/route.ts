@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const data = await resend.emails.send({
-      from: 'Nexus Job Board <onboarding@resend.dev>',
+      from: 'Nexus Job Board <support@nexus-vision.net>', // ← 認証済みの独自ドメインに変更しました
       to: [email],
       subject: '【Nexus Job Board】二段階認証コード',
       html: `<p>二段階認証コードは <strong>${code}</strong> です。</p><p>このコードを画面に入力してください。</p>`,
