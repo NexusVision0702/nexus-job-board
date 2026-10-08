@@ -16,10 +16,28 @@ export async function POST(request: Request) {
     }
 
     const data = await resend.emails.send({
-      from: 'Nexus Job Board <support@nexus-vision.net>', // ← 認証済みの独自ドメインに変更しました
+      from: 'ネクビジョ求人 運営チーム <support@nexus-vision.net>',
       to: [email],
-      subject: '【Nexus Job Board】二段階認証コード',
-      html: `<p>二段階認証コードは <strong>${code}</strong> です。</p><p>このコードを画面に入力してください。</p>`,
+      subject: '【ネクビジョ求人】二段階認証コードのお知らせ',
+      text: `
+平素より「ネクビジョ求人」をご利用いただき、誠にありがとうございます。
+
+企業アカウントの登録申請を進めるための二段階認証コードをお送りいたします。
+以下の認証コードを登録画面にご入力ください。
+
+--------------------------------------------------
+認証コード： ${code}
+（有効期限：10分）
+--------------------------------------------------
+
+※本メールにお心当たりがない場合は、お手数ですがこのメールを破棄していただきますようお願い申し上げます。
+※本メールはシステムより自動送信されています。
+
+--------------------------------------------------
+NexusVision株式会社 / ネクビジョ求人 運営チーム
+https://www.nexusuvision-web.nexus-vision.net/
+--------------------------------------------------
+      `.trim(),
     });
 
     return NextResponse.json({ success: true, data });
