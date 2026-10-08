@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
 --------------------------------------------------
 NexusVision株式会社 / ネクビジョ求人 運営チーム
-https://www.nexusuvision-web.nexus-vision.net/
+https://partner.nexus-vision.net/
 --------------------------------------------------
       `.trim(),
     });
