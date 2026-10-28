@@ -21,8 +21,11 @@ export async function POST(request: Request) {
     // 6桁のランダムな認証コードを生成
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 実際のメール送信処理
+    // ==========================================
+    // 📨 メールの送信処理
+    // ==========================================
     const { data, error } = await resend.emails.send({
+      // 💡 もしドメイン認証がまだ未完了の場合は、一時的に 'Acme <onboarding@resend.dev>' に変更するとテスト送信できます
       from: 'ネクビジョ求人 運営事務局 <noreply@nexus-vision.net>',
       to: [email],
       subject: '【ネクビジョ求人】認証コードのお知らせ',
