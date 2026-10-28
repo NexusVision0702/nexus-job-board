@@ -49,6 +49,9 @@ export default function CompanyRegisterPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // 💡 登録完了のおしゃれモーダル用ステートを追加
+  const [showCompleteModal, setShowCompleteModal] = useState<boolean>(false);
+
   const handlePhoneChange = (val: string) => {
     const numbers = String(val || '').replace(/[^0-9]/g, '');
     let formatted = numbers;
@@ -75,7 +78,6 @@ export default function CompanyRegisterPage() {
           setPrefecture(pref);
           setCity(c);
 
-          // 💡 すでに addressLine に都道府県や市区町村が含まれている場合は自動でカットする
           let currentAddr = addressLine;
           if (pref && currentAddr.startsWith(pref)) {
             currentAddr = currentAddr.slice(pref.length);
@@ -197,9 +199,10 @@ export default function CompanyRegisterPage() {
 
       console.log('>>> DynamoDBへの保存成功！', data);
 
-      alert('企業アカウントの登録申請を受け付けました。\n\n審査には最大1週間程かかる場合があります。');
+      // 💡 従来の alert() の代わりに、おしゃれモーダルを表示する
+      setShowCompleteModal(true);
       
-      setStep(1);
+      // フォーム内容のクリア
       setCompanyName('');
       setCompanyNameKana('');
       setRepresentativeName('');
@@ -250,7 +253,8 @@ export default function CompanyRegisterPage() {
       boxSizing: 'border-box',
       display: 'flex',
       justifyContent: 'center',
-      alignItems: 'flex-start'
+      alignItems: 'flex-start',
+      position: 'relative'
     }}>
       <style>{`
         @media (min-width: 640px) {
@@ -339,7 +343,7 @@ export default function CompanyRegisterPage() {
           ))}
         </div>
 
-        {/* ステップ1：基本情報（法人番号自動取得付き） */}
+        {/* 各ステップのコンポーネント */}
         {step === 1 && (
           <Step1Basic
             {...{ 
@@ -353,7 +357,6 @@ export default function CompanyRegisterPage() {
               setPostalCode,
               setPrefecture,
               setCity,
-              // 💡 取得した住所から都道府県・市区町村を安全に除外してセット
               setAddress: (addr: string) => {
                 let cleanAddr = addr;
                 if (prefecture && cleanAddr.startsWith(prefecture)) {
@@ -380,7 +383,6 @@ export default function CompanyRegisterPage() {
           />
         )}
 
-        {/* ステップ2：詳細情報 */}
         {step === 2 && (
           <Step2Corporate
             {...{ 
@@ -437,6 +439,84 @@ export default function CompanyRegisterPage() {
         )}
 
       </div>
+
+      {/* 💡 登録完了おしゃれモーダル */}
+      {showCompleteModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#fff',
+            width: '100%',
+            maxWidth: '440px',
+            padding: '32px 24px',
+            borderRadius: '20px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            textAlign: 'center'
+          }}>
+            {/* チェックマークアイコン */}
+            <div style={{
+              width: '60px',
+              height: '60px',
+              background: '#dcfce7',
+              color: '#16a34a',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '28px',
+              margin: '0 auto 20px auto',
+              fontWeight: 'bold'
+            }}>
+              ✓
+            </div>
+
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '16px' }}>
+              企業アカウントの登録申請を受け付けました
+            </h2>
+
+            <div style={{ fontSize: '13px', color: '#475569', lineHeight: '1.8', marginBottom: '24px', textAlign: 'left', background: '#f8fafc', padding: '16px', borderRadius: '12px' }}>
+              <p style={{ margin: '0 0 8px 0' }}>ご登録いただき誠にありがとうございます。</p>
+              <p style={{ margin: '0 0 8px 0' }}>審査完了まで今しばらくお待ちください。（通常1〜3営業日程度）</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>※審査結果はご登録いただいたメールアドレス宛にお知らせいたします。</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowCompleteModal(false);
+                setStep(1); // 最初のステップに戻す
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '10px',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)'
+              }}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

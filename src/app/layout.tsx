@@ -4,9 +4,9 @@ export const metadata = {
   title: 'ネクビジョ求人 企業登録',
   description: 'ネクビジョ求人の企業パートナー登録・申請ページです。',
   icons: {
-    icon: '/logo.jpg', // publicフォルダ直下に置いた場合のパス
-    shortcut: '/logo.jpg',
-    apple: '/logo.jpg',
+    icon: '/logo.png', // logo.png に修正
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
 };
 
