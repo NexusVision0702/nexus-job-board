@@ -92,15 +92,6 @@ export default function CompanyRegisterPage() {
         return;
       }
     } else if (step === 2) {
-      if (!corporateNumber || corporateNumber.length !== 13) {
-        setErrorMessage('法人番号は13桁で正しく入力してください。');
-        return;
-      }
-      const dummyPatterns = ['1234567890123', '1234567891234', '0000000000000', '1111111111111', '9999999999999'];
-      if (dummyPatterns.includes(corporateNumber)) {
-        setErrorMessage('無効な法人番号（テスト用・架空の連番）です。実在する13桁の法人番号を入力してください。');
-        return;
-      }
       if (homepageUrl && String(homepageUrl).trim() !== '' && (!homepageUrl.startsWith('http://') && !homepageUrl.startsWith('https://'))) {
         setErrorMessage('有効なホームページURL（https://...）を入力してください。');
         return;
@@ -295,7 +286,7 @@ export default function CompanyRegisterPage() {
           </div>
           <div className="header-titles" style={{ textAlign: 'center' }}>
             <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#16a34a', margin: '0 0 6px 0', lineHeight: '1.4' }}>
-              ネクビジョ求人掲載企業 アカウント登録・審査申請
+              ネクビジョ求人 企業登録
             </h1>
             <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>安全な求人掲載のため、詳細情報をご入力ください。</p>
           </div>
@@ -334,17 +325,41 @@ export default function CompanyRegisterPage() {
           ))}
         </div>
 
+        {/* ステップ1：基本情報（法人番号自動取得付き） */}
         {step === 1 && (
           <Step1Basic
-            {...{ corporateType, setCorporateType, companyName, setCompanyName, companyNameKana, setCompanyNameKana, representativeName, setRepresentativeName, contactName, setContactName, industry, setIndustry }}
+            {...{ 
+              corporateType, setCorporateType, 
+              companyName, setCompanyName, 
+              companyNameKana, setCompanyNameKana, 
+              representativeName, setRepresentativeName, 
+              contactName, setContactName, 
+              industry, setIndustry,
+              corporateNumber, setCorporateNumber,
+              setAddress: setAddressLine,
+              setPostalCode,
+              setPrefecture,
+              setCity,
+              setStreet: setAddressLine
+            }}
             onNext={nextStep}
             errorMessage={errorMessage}
           />
         )}
 
+        {/* ステップ2：詳細情報（法人番号欄を削除） */}
         {step === 2 && (
           <Step2Corporate
-            {...{ corporateNumber, setCorporateNumber, invoiceNumber, setInvoiceNumber, establishmentDate, setEstablishmentDate, capital, setCapital, fullTimeEmployees, setFullTimeEmployees, partTimeEmployees, setPartTimeEmployees, businessDescription, setBusinessDescription, homepageUrl, setHomepageUrl, licenses, setLicenses }}
+            {...{ 
+              invoiceNumber, setInvoiceNumber, 
+              establishmentDate, setEstablishmentDate, 
+              capital, setCapital, 
+              fullTimeEmployees, setFullTimeEmployees, 
+              partTimeEmployees, setPartTimeEmployees, 
+              businessDescription, setBusinessDescription, 
+              homepageUrl, setHomepageUrl, 
+              licenses, setLicenses 
+            }}
             onNext={nextStep}
             onPrev={prevStep}
             errorMessage={errorMessage}

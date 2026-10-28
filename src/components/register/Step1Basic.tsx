@@ -1,5 +1,4 @@
-// src/components/register/Step1Basic.tsx
-import React from 'react';
+import React, { useState } from 'react';
 
 const INDUSTRIES = [
   // IT・Web・通信
@@ -72,6 +71,14 @@ interface Props {
   setContactName: (val: string) => void;
   industry: string | string[];
   setIndustry: (val: any) => void;
+  // 法人番号・住所等の自動反映用プロパティ
+  corporateNumber?: string;
+  setCorporateNumber?: (val: string) => void;
+  setAddress?: (val: string) => void;
+  setPostalCode?: (val: string) => void;
+  setPrefecture?: (val: string) => void;
+  setCity?: (val: string) => void;
+  setStreet?: (val: string) => void;
   onNext: () => void;
   errorMessage: string;
 }
@@ -83,8 +90,64 @@ export default function Step1Basic({
   representativeName, setRepresentativeName,
   contactName, setContactName,
   industry, setIndustry,
+  corporateNumber = '', setCorporateNumber,
+  setAddress, setPostalCode, setPrefecture, setCity, setStreet,
   onNext, errorMessage
 }: Props) {
+
+  const [loadingHoujin, setLoadingHoujin] = useState(false);
+  const [houjinError, setHoujinError] = useState('');
+  const [houjinSuccess, setHoujinSuccess] = useState('');
+
+  // 国税庁APIを用いた法人番号自動取得処理
+  const handleFetchHoujin = async () => {
+    if (!corporateNumber || corporateNumber.length !== 13) {
+      setHoujinError('13桁の法人番号を入力してください。');
+      return;
+    }
+    setLoadingHoujin(true);
+    setHoujinError('');
+    setHoujinSuccess('');
+
+    try {
+      // ⚠️ ここを必ず `/api/houjin` に指定しています
+      const res = await fetch(`/api/houjin?number=${corporateNumber}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '国税庁APIへの接続に失敗しました。');
+      }
+
+      const corporations = data?.corporation;
+      if (corporations && corporations.length > 0) {
+        const corp = corporations[0];
+        
+        const name = corp.name || '';
+        const kind = corp.kind === '01' ? '株式会社' : corp.kind === '02' ? '有限会社' : corp.kind === '03' ? '合同会社' : '';
+        if (setCompanyName) setCompanyName(name);
+        if (kind && setCorporateType) setCorporateType(kind);
+
+        const pref = corp.prefectureName || '';
+        const city = corp.cityName || '';
+        const street = corp.streetNumber || '';
+        const fullAddress = `${pref}${city}${street}`;
+
+        if (setPostalCode && corp.postCode) setPostalCode(corp.postCode);
+        if (setPrefecture && pref) setPrefecture(pref);
+        if (setCity && city) setCity(city);
+        if (setStreet && street) setStreet(street);
+        if (setAddress && fullAddress) setAddress(fullAddress);
+
+        setHoujinSuccess('企業情報を自動取得しました！');
+      } else {
+        setHoujinError('該当する法人が見つかりませんでした。');
+      }
+    } catch (err: any) {
+      setHoujinError(err.message || 'エラーが発生しました。');
+    } finally {
+      setLoadingHoujin(false);
+    }
+  };
 
   const selectedIndustries: string[] = Array.isArray(industry) 
     ? industry 
@@ -100,9 +163,7 @@ export default function Step1Basic({
     }
   };
 
-  // すべての入力・選択が完了しているかどうかの判定（安全にString変換してtrimを実行）
   const isFormComplete = 
-    Boolean(String(corporateType || '').trim()) &&
     Boolean(String(companyName || '').trim() && String(companyName || '').length >= 2) &&
     Boolean(String(companyNameKana || '').trim()) &&
     Boolean(String(representativeName || '').trim()) &&
@@ -117,19 +178,42 @@ export default function Step1Basic({
         </div>
       )}
 
-      <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>法人格</label>
-        <select 
-          value={corporateType || ''} 
-          onChange={e => setCorporateType(e.target.value)} 
-          style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }}
-        >
-          <option value="株式会社">株式会社</option>
-          <option value="合同会社">合同会社</option>
-          <option value="有限会社">有限会社</option>
-          <option value="一般社団法人">一般社団法人</option>
-          <option value="その他">その他</option>
-        </select>
+      {/* 法人番号検索セクションを1ページ目に配置 */}
+      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+          法人番号 (13桁) ※自動取得に対応
+        </label>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input 
+            type="text" 
+            value={corporateNumber || ''} 
+            onChange={e => setCorporateNumber && setCorporateNumber(e.target.value)} 
+            placeholder="例: 1180301018771" 
+            maxLength={13}
+            style={{ flex: 1, padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', background: '#fff' }} 
+          />
+          <button 
+            type="button"
+            onClick={handleFetchHoujin}
+            disabled={loadingHoujin}
+            style={{ 
+              padding: '0 20px', 
+              background: '#2563eb', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: '8px', 
+              fontWeight: '700', 
+              cursor: loadingHoujin ? 'not-allowed' : 'pointer' 
+            }}
+          >
+            {loadingHoujin ? '取得中...' : '自動取得'}
+          </button>
+        </div>
+        {houjinError && <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '6px' }}>{houjinError}</div>}
+        {houjinSuccess && <div style={{ color: '#16a34a', fontSize: '12px', marginTop: '6px' }}>{houjinSuccess}</div>}
+        <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginTop: '6px' }}>
+          法人番号を入力して「自動取得」を押すと、企業名や住所が自動で反映されます。
+        </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>

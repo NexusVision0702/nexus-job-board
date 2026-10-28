@@ -27,10 +27,10 @@ export async function GET(request: Request) {
     const type = number ? '2' : '1';
     const query = number || name;
     
-    // 国税庁APIのURL構築
+    // 💡 &format=json を追加して、確実にJSONでレスポンスをもらうように指定
     const apiUrl = `https://api.houjin-bangou.nta.go.jp/4/app?id=${apiKey}&${type}=${encodeURIComponent(
       query!
-    )}&mode=1&kind=01`;
+    )}&mode=1&kind=01&format=json`;
 
     const response = await fetch(apiUrl);
     

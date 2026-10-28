@@ -1,9 +1,6 @@
-// src/components/register/Step2Corporate.tsx
-import React, { useState } from 'react';
+import React from 'react';
 
 interface Props {
-  corporateNumber: string;
-  setCorporateNumber: (val: string) => void;
   invoiceNumber: string;
   setInvoiceNumber: (val: string) => void;
   establishmentDate: string;
@@ -20,14 +17,12 @@ interface Props {
   setHomepageUrl: (val: string) => void;
   licenses: string;
   setLicenses: (val: string) => void;
-  onAutoFill?: (data: { name: string; postCode: string; prefecture: string; city: string; addressLine: string }) => void;
   onNext: () => void;
   onPrev: () => void;
   errorMessage: string;
 }
 
 export default function Step2Corporate({
-  corporateNumber, setCorporateNumber,
   invoiceNumber, setInvoiceNumber,
   establishmentDate, setEstablishmentDate,
   capital, setCapital,
@@ -36,45 +31,11 @@ export default function Step2Corporate({
   businessDescription, setBusinessDescription,
   homepageUrl, setHomepageUrl,
   licenses, setLicenses,
-  onAutoFill,
   onNext, onPrev, errorMessage
 }: Props) {
-  const [fetching, setFetching] = useState(false);
-  const [fetchMessage, setFetchMessage] = useState('');
 
-  const handleFetchHoujin = async () => {
-    const safeCorporateNum = String(corporateNumber || '').trim();
-    if (safeCorporateNum.length !== 13) {
-      setFetchMessage('13桁の法人番号を入力してください。');
-      return;
-    }
-
-    setFetching(true);
-    setFetchMessage('');
-
-    try {
-      const res = await fetch(`/api/houjin?number=${safeCorporateNum}`);
-      const json = await res.json();
-
-      if (json.success && json.data) {
-        setFetchMessage('✨ 企業情報を自動取得しました！');
-        if (onAutoFill) {
-          onAutoFill(json.data);
-        }
-      } else {
-        setFetchMessage(json.error || '企業が見つかりませんでした。');
-      }
-    } catch (e) {
-      setFetchMessage('通信エラーが発生しました。');
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  // ── 必須項目の判定（安全にString変換してtrimを実行） ──
-  const isFormComplete = 
-    Boolean(String(corporateNumber || '').trim().length === 13) &&
-    Boolean(String(businessDescription || '').trim());
+  // ── 必須項目の判定（事業内容のみ必須） ──
+  const isFormComplete = Boolean(String(businessDescription || '').trim());
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -83,30 +44,6 @@ export default function Step2Corporate({
           ⚠️ {errorMessage}
         </div>
       )}
-
-      <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>法人番号 (13桁)</label>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            maxLength={13} 
-            value={corporateNumber || ''} 
-            onChange={e => setCorporateNumber(e.target.value.replace(/[^0-9]/g, ''))} 
-            placeholder="例: 1234567890123" 
-            style={{ flex: 1, padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
-          />
-          <button 
-            type="button" 
-            onClick={handleFetchHoujin}
-            disabled={fetching}
-            style={{ padding: '0 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            {fetching ? '取得中...' : '自動取得'}
-          </button>
-        </div>
-        {fetchMessage && <span style={{ fontSize: '11px', color: fetchMessage.includes('✨') ? '#16a34a' : '#dc2626', marginTop: '4px', display: 'block' }}>{fetchMessage}</span>}
-        <span style={{ fontSize: '10px', color: '#64748b' }}>法人番号を入力して「自動取得」を押すと、企業名や住所が自動で反映されます。</span>
-      </div>
 
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
