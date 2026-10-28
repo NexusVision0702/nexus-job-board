@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const apiKey = process.env.MY_HOUJIN_API_KEY;
 
     if (!apiKey) {
+      console.error('Houjin API Error: APIキーが設定されていません。');
       return NextResponse.json(
         { error: 'APIキーが設定されていません。' },
         { status: 500 }
@@ -26,18 +27,23 @@ export async function GET(request: NextRequest) {
     const paramName = number ? 'number' : 'name';
     const query = number || name;
     
-    // type=01 (XML形式で取得してコード内で安全に解析する)
+    // 💡 type=12 を指定して Unicode の XML 形式で取得する
     let apiUrl = `https://api.houjin-bangou.nta.go.jp/4/${endpoint}?id=${apiKey}&${paramName}=${encodeURIComponent(
       query!
-    )}&type=01`;
+    )}&type=12`;
 
     if (name) {
       apiUrl += `&mode=1&kind=01`;
     }
 
+    console.log('Requesting NTA API URL:', apiUrl);
+
     const response = await fetch(apiUrl);
+    console.log('NTA API Status:', response.status);
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('NTA API Error Response:', errorText);
       return NextResponse.json(
         { error: '国税庁APIへの接続に失敗しました。' },
         { status: response.status }
@@ -54,20 +60,21 @@ export async function GET(request: NextRequest) {
 
     // 国税庁APIのXML構造から法人情報を抽出
     const corpName = extractTag(xmlText, 'name');
-    const kind = extractTag(xmlText, 'kind'); // 01:株式会社, 02:有限会社, 03:合同会社 など
+    const kind = extractTag(xmlText, 'kind');
     const prefectureName = extractTag(xmlText, 'prefectureName');
     const cityName = extractTag(xmlText, 'cityName');
     const streetNumber = extractTag(xmlText, 'streetNumber');
     const postCode = extractTag(xmlText, 'postCode');
 
     if (!corpName) {
+      console.error('Corp name not found in XML:', xmlText);
       return NextResponse.json(
         { error: '該当する法人が見つかりませんでした。' },
         { status: 404 }
       );
     }
 
-    // フロントエンドが期待するフォーマット（corporation配列）で返す
+    // フロントエンドが期待するフォーマットで返す
     const formattedData = {
       corporation: [
         {
