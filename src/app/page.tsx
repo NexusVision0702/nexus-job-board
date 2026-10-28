@@ -44,12 +44,16 @@ export default function CompanyRegisterPage() {
   const [phone, setPhone] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  
+  // 認証コード用のステート
+  const [verificationCode, setVerificationCode] = useState<string>('');
+
   const [newsletterOptIn, setNewsletterOptIn] = useState<boolean>(true);
   
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  // 💡 登録完了のおしゃれモーダル用ステートを追加
+  // 登録完了モーダル用ステート
   const [showCompleteModal, setShowCompleteModal] = useState<boolean>(false);
 
   const handlePhoneChange = (val: string) => {
@@ -140,6 +144,12 @@ export default function CompanyRegisterPage() {
   // 登録完了時の処理（AWSのAPIルートへ送信）
   const handleRegister = async () => {
     console.log('>>> handleRegister 実行開始 (AWS DynamoDB連携)');
+    
+    if (!verificationCode || verificationCode.length !== 6) {
+      setErrorMessage('6桁の二段階認証確認コードを入力してください。');
+      return;
+    }
+
     setLoading(true);
     setErrorMessage('');
 
@@ -182,6 +192,7 @@ export default function CompanyRegisterPage() {
         phone: String(phone || '').trim(),
         email: String(email || '').trim(),
         password: String(password || '').trim(),
+        verificationCode: String(verificationCode || '').trim(), 
         newsletterOptIn,
       };
 
@@ -199,39 +210,10 @@ export default function CompanyRegisterPage() {
 
       console.log('>>> DynamoDBへの保存成功！', data);
 
-      // 💡 従来の alert() の代わりに、おしゃれモーダルを表示する
       setShowCompleteModal(true);
-      
-      // フォーム内容のクリア
-      setCompanyName('');
-      setCompanyNameKana('');
-      setRepresentativeName('');
-      setContactName('');
-      setIndustry('');
-      setCorporateNumber('');
-      setInvoiceNumber('');
-      setEstablishmentDate('');
-      setCapital('');
-      setFullTimeEmployees('');
-      setPartTimeEmployees('');
-      setBusinessDescription('');
-      setHomepageUrl('');
-      setLicenses('');
-      setAccountingName('');
-      setAccountingEmail('');
-      setOfficeType('本社');
-      setPostalCode('');
-      setPrefecture('');
-      setCity('');
-      setAddressLine('');
-      setStores([]);
-      setPhone('');
-      setEmail('');
-      setPassword('');
     } catch (err: any) {
       console.error('>>> 登録処理エラー:', err);
       setErrorMessage(err.message || '登録に失敗しました。');
-      alert('登録に失敗しました: ' + (err.message || '通信エラー'));
     } finally {
       setLoading(false);
     }
@@ -241,7 +223,7 @@ export default function CompanyRegisterPage() {
     corporateType, companyName, companyNameKana, representativeName, contactName, industry,
     corporateNumber, invoiceNumber, establishmentDate, capital, fullTimeEmployees, partTimeEmployees,
     businessDescription, homepageUrl, licenses, accountingName, accountingEmail,
-    officeType, postalCode, prefecture, city, addressLine, stores, phone, email, newsletterOptIn
+    officeType, postalCode, prefecture, city, addressLine, stores, phone, email, verificationCode, newsletterOptIn
   };
 
   return (
@@ -291,16 +273,8 @@ export default function CompanyRegisterPage() {
           gap: '16px' 
         }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center' }}>
-            <img 
-              src="/nv-logo.png" 
-              alt="NV Logo" 
-              style={{ width: '70px', height: '70px', minWidth: '70px', objectFit: 'contain' }} 
-            />
-            <img 
-              src="/logo.png" 
-              alt="logo" 
-              style={{ width: '70px', height: '70px', minWidth: '70px', objectFit: 'contain' }} 
-            />
+            <img src="/nv-logo.png" alt="NV Logo" style={{ width: '70px', height: '70px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="logo" style={{ width: '70px', height: '70px', objectFit: 'contain' }} />
           </div>
           <div className="header-titles" style={{ textAlign: 'center' }}>
             <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#16a34a', margin: '0 0 6px 0', lineHeight: '1.4' }}>
@@ -354,29 +328,9 @@ export default function CompanyRegisterPage() {
               contactName, setContactName, 
               industry, setIndustry,
               corporateNumber, setCorporateNumber,
-              setPostalCode,
-              setPrefecture,
-              setCity,
-              setAddress: (addr: string) => {
-                let cleanAddr = addr;
-                if (prefecture && cleanAddr.startsWith(prefecture)) {
-                  cleanAddr = cleanAddr.slice(prefecture.length);
-                }
-                if (city && cleanAddr.startsWith(city)) {
-                  cleanAddr = cleanAddr.slice(city.length);
-                }
-                setAddressLine(cleanAddr.trim());
-              },
-              setStreet: (street: string) => {
-                let cleanStreet = street;
-                if (prefecture && cleanStreet.startsWith(prefecture)) {
-                  cleanStreet = cleanStreet.slice(prefecture.length);
-                }
-                if (city && cleanStreet.startsWith(city)) {
-                  cleanStreet = cleanStreet.slice(city.length);
-                }
-                setAddressLine(cleanStreet.trim());
-              }
+              setPostalCode, setPrefecture, setCity,
+              setAddress: (addr: string) => setAddressLine(addr.trim()),
+              setStreet: (street: string) => setAddressLine(street.trim())
             }}
             onNext={nextStep}
             errorMessage={errorMessage}
@@ -385,16 +339,7 @@ export default function CompanyRegisterPage() {
 
         {step === 2 && (
           <Step2Corporate
-            {...{ 
-              invoiceNumber, setInvoiceNumber, 
-              establishmentDate, setEstablishmentDate, 
-              capital, setCapital, 
-              fullTimeEmployees, setFullTimeEmployees, 
-              partTimeEmployees, setPartTimeEmployees, 
-              businessDescription, setBusinessDescription, 
-              homepageUrl, setHomepageUrl, 
-              licenses, setLicenses 
-            }}
+            {...{ invoiceNumber, setInvoiceNumber, establishmentDate, setEstablishmentDate, capital, setCapital, fullTimeEmployees, setFullTimeEmployees, partTimeEmployees, setPartTimeEmployees, businessDescription, setBusinessDescription, homepageUrl, setHomepageUrl, licenses, setLicenses }}
             onNext={nextStep}
             onPrev={prevStep}
             errorMessage={errorMessage}
@@ -431,6 +376,7 @@ export default function CompanyRegisterPage() {
         {step === 6 && (
           <Step6Confirm
             formData={formData}
+            setVerificationCode={setVerificationCode}
             loading={loading}
             onPrev={prevStep}
             onSubmit={handleRegister}
@@ -440,75 +386,35 @@ export default function CompanyRegisterPage() {
 
       </div>
 
-      {/* 💡 登録完了おしゃれモーダル */}
+      {/* 登録完了モーダル */}
       {showCompleteModal && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          padding: '16px'
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px'
         }}>
           <div style={{
-            background: '#fff',
-            width: '100%',
-            maxWidth: '440px',
-            padding: '32px 24px',
-            borderRadius: '20px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            textAlign: 'center'
+            background: '#fff', width: '100%', maxWidth: '440px', padding: '32px 24px',
+            borderRadius: '20px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', textAlign: 'center'
           }}>
-            {/* チェックマークアイコン */}
             <div style={{
-              width: '60px',
-              height: '60px',
-              background: '#dcfce7',
-              color: '#16a34a',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '28px',
-              margin: '0 auto 20px auto',
-              fontWeight: 'bold'
-            }}>
-              ✓
-            </div>
-
+              width: '60px', height: '60px', background: '#dcfce7', color: '#16a34a',
+              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '28px', margin: '0 auto 20px auto', fontWeight: 'bold'
+            }}>✓</div>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '16px' }}>
               企業アカウントの登録申請を受け付けました
             </h2>
-
             <div style={{ fontSize: '13px', color: '#475569', lineHeight: '1.8', marginBottom: '24px', textAlign: 'left', background: '#f8fafc', padding: '16px', borderRadius: '12px' }}>
               <p style={{ margin: '0 0 8px 0' }}>ご登録いただき誠にありがとうございます。</p>
               <p style={{ margin: '0 0 8px 0' }}>審査完了まで今しばらくお待ちください。（通常1〜3営業日程度）</p>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>※審査結果はご登録いただいたメールアドレス宛にお知らせいたします。</p>
             </div>
-
             <button
               type="button"
-              onClick={() => {
-                setShowCompleteModal(false);
-                setStep(1); // 最初のステップに戻す
-              }}
+              onClick={() => { setShowCompleteModal(false); setStep(1); }}
               style={{
-                width: '100%',
-                padding: '12px',
-                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '10px',
-                fontWeight: 'bold',
-                fontSize: '14px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)'
+                width: '100%', padding: '12px', background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer'
               }}
             >
               閉じる
@@ -516,7 +422,6 @@ export default function CompanyRegisterPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

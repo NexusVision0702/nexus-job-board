@@ -1,4 +1,5 @@
-// src/components/register/Step6Confirm.tsx
+'use client';
+
 import React, { useState } from 'react';
 
 interface Props {
@@ -26,26 +27,24 @@ interface Props {
     addressLine: string;
     phone: string;
     email: string;
+    verificationCode?: string;
     newsletterOptIn: boolean;
   };
+  setVerificationCode: (val: string) => void; // 💡 親のsetStateを受け取る
   loading: boolean;
   onPrev: () => void;
   onSubmit: () => void;
   errorMessage: string;
 }
 
-export default function Step6Confirm({ formData, loading, onPrev, onSubmit, errorMessage }: Props) {
+export default function Step6Confirm({ formData, setVerificationCode, loading, onPrev, onSubmit, errorMessage }: Props) {
   const [agreedAntiSocial, setAgreedAntiSocial] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
 
-  // 二段階認証用のステート
-  const [sentCode, setSentCode] = useState('');
   const [isSent, setIsSent] = useState(false);
-  const [inputCode, setInputCode] = useState('');
-  const [isVerified, setIsVerified] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [inputCode, setInputCode] = useState('');
 
-  // 業種が配列の場合を考慮して安全に文字列化するヘルパー
   const renderIndustry = () => {
     if (Array.isArray(formData.industry)) {
       return formData.industry.join('・');
@@ -53,21 +52,14 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
     return typeof formData.industry === 'string' ? formData.industry : '';
   };
 
-  // 二段階認証メールを送信（API経由）
   const handleSendVerificationCode = async () => {
-    const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
     setIsSending(true);
 
     try {
       const response = await fetch('/api/send-code', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          code: mockCode,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
       });
 
       const data = await response.json();
@@ -76,8 +68,8 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
         throw new Error(data.error || 'メールの送信に失敗しました');
       }
 
-      setSentCode(mockCode);
       setIsSent(true);
+      alert('認証コードをメールに送信しました。');
     } catch (error) {
       alert(`エラー: ${(error as Error).message}`);
     } finally {
@@ -85,15 +77,10 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
     }
   };
 
-  // 入力されたコードの検証
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
     setInputCode(val);
-    if (val === sentCode && sentCode !== '') {
-      setIsVerified(true);
-    } else {
-      setIsVerified(false);
-    }
+    setVerificationCode(val); // 💡 親（page.tsx）のステートに直接値をセットする
   };
 
   const handleClickSubmit = () => {
@@ -101,15 +88,14 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
       alert('反社会的勢力ではないことの確約および、利用規約への同意が必要です。');
       return;
     }
-    if (!isVerified) {
-      alert('二段階認証の確認コードが一致していません。');
+    if (!inputCode || inputCode.length !== 6) {
+      alert('6桁の二段階認証確認コードを入力してください。');
       return;
     }
     onSubmit();
   };
 
-  // すべての条件（反社会的勢力同意 ＋ 利用規約同意 ＋ 二段階認証コード一致）を満たしているか
-  const canSubmit = agreedAntiSocial && agreedTerms && isVerified;
+  const canSubmit = agreedAntiSocial && agreedTerms && inputCode.length === 6;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -138,7 +124,7 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
       {/* 二段階認証セクション */}
       <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>二段階認証（メール確認）</span>
-        <span style={{ fontSize: '12px', color: '#64748b' }}>ログイン用メールアドレス（{formData.email}）宛に認証コードを送信します。</span>
+        <span style={{ fontSize: '12px', color: '#64748b' }}>ログイン用メールアドレス（{formData.email}）宛に認証コードを送信します（有効期限10分）。</span>
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button 
@@ -159,16 +145,11 @@ export default function Step6Confirm({ formData, loading, onPrev, onSubmit, erro
               type="text" 
               maxLength={6} 
               value={inputCode} 
-              onChange={handleCodeChange} 
+              onChange={handleInputCodeChange} 
               placeholder="例: 123456" 
               style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
             />
-            {inputCode.length === 6 && !isVerified && (
-              <span style={{ fontSize: '11px', color: '#dc2626' }}>コードが一致しません。</span>
-            )}
-            {isVerified && (
-              <span style={{ fontSize: '11px', color: '#16a34a' }}>✨ 認証コードが一致しました！申請ボタンが有効になります。</span>
-            )}
+            <span style={{ fontSize: '11px', color: '#64748b' }}>※メールに記載された6桁の数字を入力してください。</span>
           </div>
         )}
       </div>
