@@ -110,7 +110,6 @@ export default function Step1Basic({
     setHoujinSuccess('');
 
     try {
-      // ⚠️ ここを必ず `/api/houjin` に指定しています
       const res = await fetch(`/api/houjin?number=${corporateNumber}`);
       const data = await res.json();
 
@@ -163,7 +162,9 @@ export default function Step1Basic({
     }
   };
 
+  // 💡 法人番号（13桁）が入力されていることを必須条件に追加
   const isFormComplete = 
+    Boolean(String(corporateNumber || '').trim().length === 13) &&
     Boolean(String(companyName || '').trim() && String(companyName || '').length >= 2) &&
     Boolean(String(companyNameKana || '').trim()) &&
     Boolean(String(representativeName || '').trim()) &&
@@ -178,10 +179,10 @@ export default function Step1Basic({
         </div>
       )}
 
-      {/* 法人番号検索セクションを1ページ目に配置 */}
+      {/* 法人番号検索セクション（必須） */}
       <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
-          法人番号 (13桁) ※自動取得に対応
+          法人番号 (13桁) <span style={{ color: '#dc2626' }}>*必須</span> ※自動取得に対応
         </label>
         <div style={{ display: 'flex', gap: '10px' }}>
           <input 
@@ -313,7 +314,7 @@ export default function Step1Basic({
           transition: 'background 0.2s'
         }}
       >
-        {isFormComplete ? '次へ進む ➔' : 'すべての項目を入力・選択してください'}
+        {isFormComplete ? '次へ進む ➔' : '法人番号（13桁）およびすべての必須項目を入力してください'}
       </button>
     </div>
   );
