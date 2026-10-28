@@ -3,9 +3,10 @@ import { Resend } from 'resend';
 
 export async function POST(request: Request) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
+    // AWS Amplifyの予約語制限を回避するため MY_ を付与
+    const apiKey = process.env.MY_RESEND_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'RESEND_API_KEY is not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'MY_RESEND_API_KEY is not configured' }, { status: 500 });
     }
 
     const resend = new Resend(apiKey);

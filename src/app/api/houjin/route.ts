@@ -6,7 +6,8 @@ export async function GET(request: Request) {
     const name = searchParams.get('name'); // 会社名
     const number = searchParams.get('number'); // 法人番号（13桁）
 
-    const apiKey = process.env.HOUJIN_API_KEY;
+    // AWS Amplifyの予約語制限（AWS_）を回避するため MY_ を付与
+    const apiKey = process.env.MY_HOUJIN_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
