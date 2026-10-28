@@ -83,6 +83,11 @@ export default function CompanyRegisterPage() {
     setErrorMessage('');
     const safeCompanyName = String(companyName || '');
     if (step === 1) {
+      // 💡 法人番号（13桁）が未入力または不正な場合のバリデーション
+      if (!corporateNumber || corporateNumber.length !== 13) {
+        setErrorMessage('13桁の法人番号を正しく入力してください。');
+        return;
+      }
       if (!companyName || !companyNameKana || !representativeName || !contactName || !industry) {
         setErrorMessage('すべての項目を入力してください。');
         return;
@@ -347,7 +352,7 @@ export default function CompanyRegisterPage() {
           />
         )}
 
-        {/* ステップ2：詳細情報（法人番号欄を削除） */}
+        {/* ステップ2：詳細情報 */}
         {step === 2 && (
           <Step2Corporate
             {...{ 
