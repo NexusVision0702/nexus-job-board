@@ -86,7 +86,24 @@ export default function Step4Address({
     setStores(stores.filter((_, i) => i !== index));
   };
 
-  // 本社の所在地（必須）がすべて入力されているかの判定（安全にString変換してtrimを実行）
+  // 💡 郵便番号入力時のラッパー（親の関数を呼びつつ、addressLineの重複を自動カットする）
+  const onPostalChangeWithClean = (val: string) => {
+    handlePostalCodeChange(val);
+    
+    // すでに addressLine に都道府県や市区町村名が入ってしまっている場合は自動で取り除く
+    let cleanAddr = addressLine || '';
+    if (prefecture && cleanAddr.startsWith(prefecture)) {
+      cleanAddr = cleanAddr.slice(prefecture.length);
+    }
+    if (city && cleanAddr.startsWith(city)) {
+      cleanAddr = cleanAddr.slice(city.length);
+    }
+    if (cleanAddr !== addressLine) {
+      setAddressLine(cleanAddr.trim());
+    }
+  };
+
+  // 本社の所在地（必須）がすべて入力されているかの判定
   const isFormComplete = 
     Boolean(String(postalCode || '').trim().length === 7) &&
     Boolean(String(prefecture || '').trim()) &&
@@ -103,7 +120,9 @@ export default function Step4Address({
 
       {/* メイン拠点（本社・支社）の選択 */}
       <div>
-        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: '#374151' }}>拠点の種類</label>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: '#374151' }}>
+          拠点の種類 <span style={{ color: '#dc2626' }}>*必須</span>
+        </label>
         <div style={{ display: 'flex', gap: '20px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
             <input 
@@ -130,15 +149,19 @@ export default function Step4Address({
 
       {/* メイン所在地入力 */}
       <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <span style={{ fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>{officeType}の所在地（必須）</span>
+        <span style={{ fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>
+          {officeType}の所在地 <span style={{ color: '#dc2626' }}>*必須</span>
+        </span>
         
         <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>郵便番号 (7桁入力で自動反映)</label>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>
+            郵便番号 (7桁入力で自動反映) <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="text" 
             maxLength={7} 
             value={postalCode || ''} 
-            onChange={e => handlePostalCodeChange(e.target.value)} 
+            onChange={e => onPostalChangeWithClean(e.target.value)} 
             placeholder="例: 9800021" 
             style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
           />
@@ -146,17 +169,35 @@ export default function Step4Address({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>都道府県</label>
-            <input type="text" value={prefecture || ''} readOnly placeholder="自動入力" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6' }} />
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>
+              都道府県 <span style={{ color: '#dc2626' }}>*必須</span>
+            </label>
+            <input 
+              type="text" 
+              value={prefecture || ''} 
+              readOnly 
+              placeholder="自動入力" 
+              style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6', color: '#334151' }} 
+            />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>市区町村・町域</label>
-            <input type="text" value={city || ''} readOnly placeholder="自動入力" style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6' }} />
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>
+              市区町村・町域 <span style={{ color: '#dc2626' }}>*必須</span>
+            </label>
+            <input 
+              type="text" 
+              value={city || ''} 
+              readOnly 
+              placeholder="自動入力" 
+              style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#f3f4f6', color: '#334151' }} 
+            />
           </div>
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>それ以降の住所 (番地・ビル名など)</label>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#4b5563' }}>
+            それ以降の住所 (番地・ビル名など) <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="text" 
             value={addressLine || ''} 
@@ -236,7 +277,7 @@ export default function Step4Address({
             transition: 'background 0.2s'
           }}
         >
-          {isFormComplete ? '次へ進む ➔' : '本社の所在地を入力してください'}
+          {isFormComplete ? '次へ進む ➔' : '本社の所在地をすべて入力してください'}
         </button>
       </div>
     </div>

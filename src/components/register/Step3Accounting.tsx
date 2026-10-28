@@ -1,4 +1,3 @@
-// src/components/register/Step3Accounting.tsx
 import React from 'react';
 
 interface Props {
@@ -16,9 +15,13 @@ export default function Step3Accounting({
   accountingEmail, setAccountingEmail,
   onNext, onPrev, errorMessage
 }: Props) {
+  // ── メールアドレスの簡易形式チェック用正規表現 ──
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // ── 必須項目 ＋ 正しいメールアドレス形式のときのみ完了判定を true にする ──
   const isFormComplete = 
     Boolean(String(accountingName || '').trim()) &&
-    Boolean(String(accountingEmail || '').trim());
+    emailRegex.test(String(accountingEmail || '').trim());
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -35,7 +38,9 @@ export default function Step3Accounting({
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>経理ご担当者名 (または部署名)</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+            経理ご担当者名 (または部署名) <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="text" 
             value={accountingName || ''} 
@@ -46,7 +51,9 @@ export default function Step3Accounting({
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>請求書送付用メールアドレス</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+            請求書送付用メールアドレス <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="email" 
             value={accountingEmail || ''} 
@@ -54,6 +61,11 @@ export default function Step3Accounting({
             placeholder="accounting@example.co.jp" 
             style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
           />
+          {accountingEmail && !emailRegex.test(accountingEmail) && (
+            <span style={{ fontSize: '11px', color: '#dc2626', display: 'block', marginTop: '4px' }}>
+              有効なメールアドレスの形式で入力してください（例: @ やドメインを含めてください）。
+            </span>
+          )}
         </div>
       </div>
 
@@ -77,7 +89,7 @@ export default function Step3Accounting({
             transition: 'background 0.2s'
           }}
         >
-          {isFormComplete ? '次へ進む ➔' : '未入力項目があります'}
+          {isFormComplete ? '次へ進む ➔' : '正しいメールアドレスを入力してください'}
         </button>
       </div>
     </div>

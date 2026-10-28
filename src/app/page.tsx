@@ -70,8 +70,20 @@ export default function CompanyRegisterPage() {
         const data = await res.json();
         if (data.results && data.results.length > 0) {
           const result = data.results[0];
-          setPrefecture(result.address1 || '');
-          setCity((result.address2 || '') + (result.address3 || ''));
+          const pref = result.address1 || '';
+          const c = (result.address2 || '') + (result.address3 || '');
+          setPrefecture(pref);
+          setCity(c);
+
+          // 💡 すでに addressLine に都道府県や市区町村が含まれている場合は自動でカットする
+          let currentAddr = addressLine;
+          if (pref && currentAddr.startsWith(pref)) {
+            currentAddr = currentAddr.slice(pref.length);
+          }
+          if (c && currentAddr.startsWith(c)) {
+            currentAddr = currentAddr.slice(c.length);
+          }
+          setAddressLine(currentAddr.trim());
         }
       } catch (e) {
         console.error('住所自動取得エラー', e);
@@ -83,7 +95,6 @@ export default function CompanyRegisterPage() {
     setErrorMessage('');
     const safeCompanyName = String(companyName || '');
     if (step === 1) {
-      // 💡 法人番号（13桁）が未入力または不正な場合のバリデーション
       if (!corporateNumber || corporateNumber.length !== 13) {
         setErrorMessage('13桁の法人番号を正しく入力してください。');
         return;
@@ -172,7 +183,6 @@ export default function CompanyRegisterPage() {
         newsletterOptIn,
       };
 
-      // AWSのAPIエンドポイントへPOST送信
       const res = await fetch('/api/partners/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -189,7 +199,6 @@ export default function CompanyRegisterPage() {
 
       alert('企業アカウントの登録申請を受け付けました。\n\n審査には最大1週間程かかる場合があります。');
       
-      // フォームリセット
       setStep(1);
       setCompanyName('');
       setCompanyNameKana('');
@@ -341,11 +350,30 @@ export default function CompanyRegisterPage() {
               contactName, setContactName, 
               industry, setIndustry,
               corporateNumber, setCorporateNumber,
-              setAddress: setAddressLine,
               setPostalCode,
               setPrefecture,
               setCity,
-              setStreet: setAddressLine
+              // 💡 取得した住所から都道府県・市区町村を安全に除外してセット
+              setAddress: (addr: string) => {
+                let cleanAddr = addr;
+                if (prefecture && cleanAddr.startsWith(prefecture)) {
+                  cleanAddr = cleanAddr.slice(prefecture.length);
+                }
+                if (city && cleanAddr.startsWith(city)) {
+                  cleanAddr = cleanAddr.slice(city.length);
+                }
+                setAddressLine(cleanAddr.trim());
+              },
+              setStreet: (street: string) => {
+                let cleanStreet = street;
+                if (prefecture && cleanStreet.startsWith(prefecture)) {
+                  cleanStreet = cleanStreet.slice(prefecture.length);
+                }
+                if (city && cleanStreet.startsWith(city)) {
+                  cleanStreet = cleanStreet.slice(city.length);
+                }
+                setAddressLine(cleanStreet.trim());
+              }
             }}
             onNext={nextStep}
             errorMessage={errorMessage}

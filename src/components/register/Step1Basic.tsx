@@ -71,7 +71,6 @@ interface Props {
   setContactName: (val: string) => void;
   industry: string | string[];
   setIndustry: (val: any) => void;
-  // 法人番号・住所等の自動反映用プロパティ
   corporateNumber?: string;
   setCorporateNumber?: (val: string) => void;
   setAddress?: (val: string) => void;
@@ -99,7 +98,6 @@ export default function Step1Basic({
   const [houjinError, setHoujinError] = useState('');
   const [houjinSuccess, setHoujinSuccess] = useState('');
 
-  // 国税庁APIを用いた法人番号自動取得処理
   const handleFetchHoujin = async () => {
     if (!corporateNumber || corporateNumber.length !== 13) {
       setHoujinError('13桁の法人番号を入力してください。');
@@ -129,13 +127,23 @@ export default function Step1Basic({
         const pref = corp.prefectureName || '';
         const city = corp.cityName || '';
         const street = corp.streetNumber || '';
-        const fullAddress = `${pref}${city}${street}`;
 
         if (setPostalCode && corp.postCode) setPostalCode(corp.postCode);
         if (setPrefecture && pref) setPrefecture(pref);
         if (setCity && city) setCity(city);
-        if (setStreet && street) setStreet(street);
-        if (setAddress && fullAddress) setAddress(fullAddress);
+
+        // 💡 都道府県名や市区町村名が street に含まれている場合は自動でカットして番地のみにする
+        let cleanStreet = street;
+        if (pref && cleanStreet.startsWith(pref)) {
+          cleanStreet = cleanStreet.slice(pref.length);
+        }
+        if (city && cleanStreet.startsWith(city)) {
+          cleanStreet = cleanStreet.slice(city.length);
+        }
+        const trimmedStreet = cleanStreet.trim();
+
+        if (setStreet) setStreet(trimmedStreet);
+        if (setAddress) setAddress(trimmedStreet);
 
         setHoujinSuccess('企業情報を自動取得しました！');
       } else {
@@ -162,7 +170,7 @@ export default function Step1Basic({
     }
   };
 
-  // 💡 法人番号（13桁）が入力されていることを必須条件に追加
+  // すべての項目が入力・選択されているかどうかの判定
   const isFormComplete = 
     Boolean(String(corporateNumber || '').trim().length === 13) &&
     Boolean(String(companyName || '').trim() && String(companyName || '').length >= 2) &&
@@ -179,7 +187,7 @@ export default function Step1Basic({
         </div>
       )}
 
-      {/* 法人番号検索セクション（必須） */}
+      {/* 法人番号検索セクション */}
       <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
           法人番号 (13桁) <span style={{ color: '#dc2626' }}>*必須</span> ※自動取得に対応
@@ -189,7 +197,7 @@ export default function Step1Basic({
             type="text" 
             value={corporateNumber || ''} 
             onChange={e => setCorporateNumber && setCorporateNumber(e.target.value)} 
-            placeholder="例: 1180301018771" 
+            placeholder="例: 8370001051493" 
             maxLength={13}
             style={{ flex: 1, padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', background: '#fff' }} 
           />
@@ -219,7 +227,9 @@ export default function Step1Basic({
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>企業名 (法人名)</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+            企業名 (法人名) <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="text" 
             value={companyName || ''} 
@@ -230,7 +240,9 @@ export default function Step1Basic({
           <span style={{ fontSize: '10px', color: '#64748b' }}>※2文字以上で正確な名称を入力してください</span>
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>企業名 フリガナ</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+            企業名 フリガナ <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="text" 
             value={companyNameKana || ''} 
@@ -243,7 +255,9 @@ export default function Step1Basic({
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>代表者のお名前</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+            代表者のお名前 <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="text" 
             value={representativeName || ''} 
@@ -253,7 +267,9 @@ export default function Step1Basic({
           />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>採用ご担当者名</label>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
+            採用ご担当者名 <span style={{ color: '#dc2626' }}>*必須</span>
+          </label>
           <input 
             type="text" 
             value={contactName || ''} 
@@ -267,7 +283,7 @@ export default function Step1Basic({
       {/* 複数選択可能な業種セクション */}
       <div>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
-          業種・職種（複数選択可：現在 {selectedIndustries.length}件選択中）
+          業種・職種（複数選択可） <span style={{ color: '#dc2626' }}>*必須</span> （現在 {selectedIndustries.length}件選択中）
         </label>
         <div style={{ 
           maxHeight: '180px', 
@@ -314,7 +330,7 @@ export default function Step1Basic({
           transition: 'background 0.2s'
         }}
       >
-        {isFormComplete ? '次へ進む ➔' : '法人番号（13桁）およびすべての必須項目を入力してください'}
+        {isFormComplete ? '次へ進む ➔' : 'すべての必須項目を入力・選択してください'}
       </button>
     </div>
   );
