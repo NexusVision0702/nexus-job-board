@@ -7,6 +7,7 @@ frontend:
     build:
       commands:
         - echo "MY_HOUJIN_API_KEY=$MY_HOUJIN_API_KEY" >> .env.production
+        - echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
