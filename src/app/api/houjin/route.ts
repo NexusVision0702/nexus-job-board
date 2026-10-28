@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const name = searchParams.get('name'); // 会社名
-    const number = searchParams.get('number'); // 法人番号（13桁）
+    const searchParams = request.nextUrl.searchParams;
+    const name = searchParams.get('name');
+    const number = searchParams.get('number');
 
-    // AWS Amplifyの予約語制限（AWS_）を回避するため MY_ を付与
     const apiKey = process.env.MY_HOUJIN_API_KEY;
 
     if (!apiKey) {
@@ -23,17 +22,21 @@ export async function GET(request: Request) {
       );
     }
 
-    // 国税庁 法人番号APIのエンドポイント（タイプ: 1=商号または名称, 2=法人番号）
-    const type = number ? '2' : '1';
+    const endpoint = number ? 'num' : 'name';
+    const paramName = number ? 'number' : 'name';
     const query = number || name;
     
-    // 💡 &format=json を追加して、確実にJSONでレスポンスをもらうように指定
-    const apiUrl = `https://api.houjin-bangou.nta.go.jp/4/app?id=${apiKey}&${type}=${encodeURIComponent(
+    // type=01 (XML形式で取得してコード内で安全に解析する)
+    let apiUrl = `https://api.houjin-bangou.nta.go.jp/4/${endpoint}?id=${apiKey}&${paramName}=${encodeURIComponent(
       query!
-    )}&mode=1&kind=01&format=json`;
+    )}&type=01`;
+
+    if (name) {
+      apiUrl += `&mode=1&kind=01`;
+    }
 
     const response = await fetch(apiUrl);
-    
+
     if (!response.ok) {
       return NextResponse.json(
         { error: '国税庁APIへの接続に失敗しました。' },
@@ -41,11 +44,47 @@ export async function GET(request: Request) {
       );
     }
 
-    const data = await response.json();
+    const xmlText = await response.text();
 
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Houjin API Error:', error);
+    // 簡易かつ確実にXMLから必要な情報を抽出するヘルパー関数
+    const extractTag = (xml: string, tag: string) => {
+      const match = xml.match(new RegExp(`<${tag}[^>]*>(.*?)<\/${tag}>`, 's'));
+      return match ? match[1].trim() : '';
+    };
+
+    // 国税庁APIのXML構造から法人情報を抽出
+    const corpName = extractTag(xmlText, 'name');
+    const kind = extractTag(xmlText, 'kind'); // 01:株式会社, 02:有限会社, 03:合同会社 など
+    const prefectureName = extractTag(xmlText, 'prefectureName');
+    const cityName = extractTag(xmlText, 'cityName');
+    const streetNumber = extractTag(xmlText, 'streetNumber');
+    const postCode = extractTag(xmlText, 'postCode');
+
+    if (!corpName) {
+      return NextResponse.json(
+        { error: '該当する法人が見つかりませんでした。' },
+        { status: 404 }
+      );
+    }
+
+    // フロントエンドが期待するフォーマット（corporation配列）で返す
+    const formattedData = {
+      corporation: [
+        {
+          name: corpName,
+          kind: kind,
+          prefectureName: prefectureName,
+          cityName: cityName,
+          streetNumber: streetNumber,
+          postCode: postCode,
+        }
+      ]
+    };
+
+    return NextResponse.json(formattedData);
+    
+  } catch (error: any) {
+    console.error('Houjin API Exception:', error);
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました。' },
       { status: 500 }
