@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-// import { Resend } from 'resend'; // Resendを使う場合のインポート
+import { Resend } from 'resend';
 
-// const resend = new Resend(process.env.RESEND_API_KEY);
+// Resendクライアントの初期化（環境変数からAPIキーを読み込み）
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
@@ -15,10 +16,8 @@ export async function POST(request: Request) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // ==========================================
-    // 📨 実際のメール送信処理
+    // 📨 実際のメール送信処理（Resend）
     // ==========================================
-    /*
-    // Resendを使用する場合の例：
     const { data, error } = await resend.emails.send({
       from: 'ネクビジョ求人 運営事務局 <noreply@nexus-vision.net>',
       to: [email],
@@ -27,21 +26,15 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error('メール送信エラー:', error);
+      console.error('Resend メール送信エラー:', error);
       return NextResponse.json({ error: 'メールの送信に失敗しました。' }, { status: 500 });
     }
-    */
 
-    // 💡 現在ダミーになっている場合は、上記のコメントアウトを外して本番用の送信処理に切り替えてください。
-    console.log(`>>> [本番メール送信] 宛先: ${email} / 認証コード: ${verificationCode}`);
-
-    // セキュリティやセッション管理のため、本来はこのコードをDBやサーバーのメモリ（Redis等）に一時保存します。
+    console.log(`>>> [メール送信成功] 宛先: ${email} / 認証コード: ${verificationCode}`);
 
     return NextResponse.json({ 
       success: true, 
-      message: '認証コードを送信しました。',
-      // デバッグ用やテスト段階では残しても良いですが、本番では code はレスポンスに含めないようにします
-      // mockCode: verificationCode 
+      message: '認証コードを送信しました。'
     });
 
   } catch (error: any) {
