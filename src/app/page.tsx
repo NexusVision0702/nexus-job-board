@@ -288,8 +288,8 @@ export default function CompanyRegisterPage() {
               style={{ width: '70px', height: '70px', minWidth: '70px', objectFit: 'contain' }} 
             />
             <img 
-              src="/rogo.png" 
-              alt="Rogo" 
+              src="/logo.png" 
+              alt="logo" 
               style={{ width: '70px', height: '70px', minWidth: '70px', objectFit: 'contain' }} 
             />
           </div>
