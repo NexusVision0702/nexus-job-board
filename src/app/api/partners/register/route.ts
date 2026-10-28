@@ -37,7 +37,7 @@ async function sendReviewNotificationToInternal(companyData: any) {
 `;
 
   await resend.emails.send({
-    from: 'ネクビジョ求人 運営事務局 <noreply@nexus-vision.net>',
+    from: 'ネクビジョ求人 運営事務局 <support@nexus-vision.net>', // 💡 support@nexus-vision.netに変更
     to: [internalEmail],
     subject: subject,
     text: text,
@@ -63,12 +63,12 @@ ${companyData.representativeName} 様
 --------------------------------------------------
 ネクビジョ求人 運営事務局
 ホームページ: https://www.nexusuvision-web.nexus-vision.net
-お問い合わせ: info@nexus-vision.net
+お問い合わせ: support@nexus-vision.net
 --------------------------------------------------
 `;
 
   await resend.emails.send({
-    from: 'ネクビジョ求人 運営事務局 <noreply@nexus-vision.net>',
+    from: 'ネクビジョ求人 運営事務局 <support@nexus-vision.net>', // 💡 support@nexus-vision.netに変更
     to: [companyData.email],
     subject: subject,
     text: text,
