@@ -1,9 +1,6 @@
-// src/app/page.tsx
 'use client';
 
 import React, { useState } from 'react';
-import { db } from '../lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
 
 import Step1Basic from '../components/register/Step1Basic';
 import Step2Corporate from '../components/register/Step2Corporate';
@@ -131,9 +128,9 @@ export default function CompanyRegisterPage() {
     setStep(prev => prev - 1);
   };
 
-  // 登録完了時の処理（安全にString変換してtrimを実行）
+  // 登録完了時の処理（AWSのAPIルートへ送信）
   const handleRegister = async () => {
-    console.log('>>> handleRegister 実行開始');
+    console.log('>>> handleRegister 実行開始 (AWS DynamoDB連携)');
     setLoading(true);
     setErrorMessage('');
 
@@ -144,13 +141,11 @@ export default function CompanyRegisterPage() {
       const safeAddr = String(addressLine || '');
       const fullAddress = `〒${safePostal} ${safePref}${safeCity}${safeAddr}`.trim();
 
-      // industry が配列の場合に対応
       const industryStr = Array.isArray(industry) 
         ? industry.join(', ') 
         : String(industry || '');
 
-      // 1. Firestoreへのデータ保存
-      await addDoc(collection(db, 'companies'), {
+      const payload = {
         corporateType: String(corporateType || '').trim(),
         companyName: String(companyName || '').trim(),
         companyNameKana: String(companyNameKana || '').trim(),
@@ -179,11 +174,22 @@ export default function CompanyRegisterPage() {
         email: String(email || '').trim(),
         password: String(password || '').trim(),
         newsletterOptIn,
-        status: 'pending_review',
-        createdAt: new Date().toISOString(),
+      };
+
+      // AWSのAPIエンドポイントへPOST送信
+      const res = await fetch('/api/partners/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      console.log('>>> Firestoreへの保存成功！');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '登録処理に失敗しました。');
+      }
+
+      console.log('>>> DynamoDBへの保存成功！', data);
 
       alert('企業アカウントの登録申請を受け付けました。\n\n審査には最大1週間程かかる場合があります。');
       
@@ -217,9 +223,8 @@ export default function CompanyRegisterPage() {
     } catch (err: any) {
       console.error('>>> 登録処理エラー:', err);
       setErrorMessage(err.message || '登録に失敗しました。');
-      alert('登録に失敗しました: ' + (err.message || '通信エラーまたは権限エラー'));
+      alert('登録に失敗しました: ' + (err.message || '通信エラー'));
     } finally {
-      console.log('>>> 処理終了: setLoading(false)を実行します');
       setLoading(false);
     }
   };
@@ -267,7 +272,7 @@ export default function CompanyRegisterPage() {
         boxSizing: 'border-box'
       }}>
         
-        {/* レスポンシブ対応のヘッダー部分 */}
+        {/* ヘッダー部分 */}
         <div className="header-wrapper" style={{ 
           marginBottom: '30px', 
           display: 'flex', 
