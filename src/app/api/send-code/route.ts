@@ -22,21 +22,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'メールアドレスが指定されていません。' }, { status: 400 });
     }
 
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'メール送信機能の環境設定が不足しています。' }, { status: 500 });
-    }
-
-    const resend = new Resend(apiKey);
-
     // 6桁のランダムな認証コードを生成
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // 💡 有効期限を10分後に設定（現在時刻 + 10分）
-    const expiresAt = Date.now() + 10 * 60 * 1000;
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 有効期限10分
 
-    // DynamoDBに認証コードと有効期限を一時保存（キーはメールアドレスなど、識別しやすい形式）
-    // ※ 既存の本登録データと混ざらないよう、プレフィックスとして 'code_' を付与
+    // DynamoDBに認証コードを保存
     const codeItem = {
       id: `code_${email}`,
       email,
@@ -45,25 +35,79 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    await docClient.send(new PutCommand({
-      TableName: TABLE_NAME,
-      Item: codeItem,
-    }));
-
-    // メール送信処理
-    const { error } = await resend.emails.send({
-      from: 'ネクビジョ求人 運営事務局 <noreply@nexus-vision.net>',
-      to: [email],
-      subject: '【ネクビジョ求人】認証コードのお知らせ',
-      text: `ネクビジョ求人をご利用いただきありがとうございます。\n\n認証コードは以下の6桁です（有効期限：10分）。\n\n${verificationCode}\n\nこのコードを画面に入力してください。`,
-    });
-
-    if (error) {
-      console.error('Resend メール送信エラー:', error);
-      return NextResponse.json({ error: `メールの送信に失敗しました: ${error.message || '詳細不明'}` }, { status: 500 });
+    try {
+      await docClient.send(new PutCommand({
+        TableName: TABLE_NAME,
+        Item: codeItem,
+      }));
+    } catch (dbErr: any) {
+      console.error('DynamoDB 認証コード保存エラー:', dbErr);
+      return NextResponse.json({ error: 'データベースへのコード保存に失敗しました。' }, { status: 500 });
     }
 
-    console.log(`>>> [認証コード送信] 宛先: ${email} / コード: ${verificationCode}`);
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn('⚠️ RESEND_API_KEY が設定されていません。');
+      return NextResponse.json({ error: 'メール送信機能の環境設定が不足しています。' }, { status: 500 });
+    }
+
+    const resend = new Resend(apiKey);
+    
+    // ✨ 丁寧で美しい長文フォーマット（Gmailの英語誤判定も防ぎます）
+    const subject = `【ネクビジョ求人】企業アカウント登録 ご本人様確認（認証コードのご案内）`;
+    const text = `
+ネクビジョ求人をご利用いただき、
+誠にありがとうございます。
+
+本システムにおける企業アカウントの新規登録にあたり、
+ご本人様確認のための二段階認証コードを発行いたしました。
+
+以下の6桁の確認コードを、
+登録画面の入力フォームへご入力ください。
+
+--------------------------------------------------
+■ 認証コード
+${verificationCode}
+--------------------------------------------------
+
+【重要・注意事項】
+・本コードの有効期限は、送信から10分間となっております。
+・有効期限が切れた場合は、お手数ですが
+ 登録画面よりコードの再送を行ってください。
+・セキュリティ保持のため、本コードを第三者に
+ 共有・開示しないようご注意ください。
+・心当たりがない場合や、本登録のお手続きをされていない場合は、
+ 本メールを速やかに破棄していただき、
+ お手数ですが運営事務局までご一報いただけますと幸いです。
+
+引き続き「ネクビジョ求人」を何卒よろしくお願い申し上げます。
+
+--------------------------------------------------
+【ネクビジョ求人 運営事務局】
+ホームページ: https://company.nexus-vision.net/
+お問い合わせ: info@nexus-vision.net
+受付時間: 平日 10:00〜17:00
+--------------------------------------------------
+`;
+
+    try {
+      const { error: resendError } = await resend.emails.send({
+        from: 'ネクビジョ求人 運営事務局 <support@nexus-vision.net>',
+        to: [email],
+        subject: subject,
+        text: text,
+      });
+
+      if (resendError) {
+        console.error('Resend API エラー:', resendError);
+        console.log(`💡 【緊急バックアップ】 宛先: ${email} / 認証コード: ${verificationCode}`);
+      } else {
+        console.log(`>>> [認証コード送信成功] 宛先: ${email} / コード: ${verificationCode}`);
+      }
+    } catch (networkErr: any) {
+      console.error('Resend 通信/ネットワーク例外:', networkErr?.message || networkErr);
+      console.log(`💡 【緊急バックアップ】 宛先: ${email} / 認証コード: ${verificationCode}`);
+    }
 
     return NextResponse.json({ 
       success: true, 

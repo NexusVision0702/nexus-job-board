@@ -30,20 +30,22 @@ interface Props {
     verificationCode?: string;
     newsletterOptIn: boolean;
   };
-  setVerificationCode: (val: string) => void; // 💡 親のsetStateを受け取る
+  setVerificationCode: (val: string) => void;
   loading: boolean;
   onPrev: () => void;
   onSubmit: () => void;
   errorMessage: string;
+  showToast: (msg: string) => void; // 💡 親から受け取るトースト表示関数
 }
 
-export default function Step6Confirm({ formData, setVerificationCode, loading, onPrev, onSubmit, errorMessage }: Props) {
+export default function Step6Confirm({ formData, setVerificationCode, loading, onPrev, onSubmit, errorMessage, showToast }: Props) {
   const [agreedAntiSocial, setAgreedAntiSocial] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
 
   const [isSent, setIsSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [inputCode, setInputCode] = useState('');
+  const [localError, setLocalError] = useState(''); // 💡 ローカルエラー表示用
 
   const renderIndustry = () => {
     if (Array.isArray(formData.industry)) {
@@ -54,6 +56,7 @@ export default function Step6Confirm({ formData, setVerificationCode, loading, o
 
   const handleSendVerificationCode = async () => {
     setIsSending(true);
+    setLocalError('');
 
     try {
       const response = await fetch('/api/send-code', {
@@ -69,9 +72,9 @@ export default function Step6Confirm({ formData, setVerificationCode, loading, o
       }
 
       setIsSent(true);
-      alert('認証コードをメールに送信しました。');
+      showToast('認証コードをメールに送信しました。'); // ✨ トースト通知を使用
     } catch (error) {
-      alert(`エラー: ${(error as Error).message}`);
+      setLocalError(`エラー: ${(error as Error).message}`);
     } finally {
       setIsSending(false);
     }
@@ -80,16 +83,17 @@ export default function Step6Confirm({ formData, setVerificationCode, loading, o
   const handleInputCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
     setInputCode(val);
-    setVerificationCode(val); // 💡 親（page.tsx）のステートに直接値をセットする
+    setVerificationCode(val);
   };
 
   const handleClickSubmit = () => {
+    setLocalError('');
     if (!agreedAntiSocial || !agreedTerms) {
-      alert('反社会的勢力ではないことの確約および、利用規約への同意が必要です。');
+      setLocalError('反社会的勢力ではないことの確約および、利用規約への同意が必要です。');
       return;
     }
     if (!inputCode || inputCode.length !== 6) {
-      alert('6桁の二段階認証確認コードを入力してください。');
+      setLocalError('6桁の二段階認証確認コードを入力してください。');
       return;
     }
     onSubmit();
@@ -99,9 +103,9 @@ export default function Step6Confirm({ formData, setVerificationCode, loading, o
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {errorMessage && (
+      {(errorMessage || localError) && (
         <div style={{ background: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '8px', fontSize: '13px' }}>
-          ⚠️ {errorMessage}
+          ⚠️ {errorMessage || localError}
         </div>
       )}
 

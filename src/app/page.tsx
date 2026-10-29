@@ -53,6 +53,16 @@ export default function CompanyRegisterPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // ✨ カスタム通知（トースト）用のステート
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000); // 4秒後に自動で消える
+  };
+
   // 登録完了モーダル用ステート
   const [showCompleteModal, setShowCompleteModal] = useState<boolean>(false);
 
@@ -109,7 +119,7 @@ export default function CompanyRegisterPage() {
         setErrorMessage('すべての項目を入力してください。');
         return;
       }
-      if (safeCompanyName.length < 2 || safeCompanyName === 's' || safeCompanyName === 'テスト' || safeCompanyName === 'あ') {
+      if (safeCompanyName.length < 2) {
         setErrorMessage('有効な企業名（正式名称）を入力してください。');
         return;
       }
@@ -253,6 +263,29 @@ export default function CompanyRegisterPage() {
         }
       `}</style>
 
+      {/* ✨ トースト通知（画面上の洗練されたポップアップバナー） */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: '#16a34a',
+          color: '#fff',
+          padding: '12px 20px',
+          borderRadius: '10px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 9999,
+          fontSize: '13px',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          <span>✓</span> {toastMessage}
+        </div>
+      )}
+
       <div className="responsive-container" style={{ 
         width: '100%', 
         maxWidth: '680px', 
@@ -381,6 +414,7 @@ export default function CompanyRegisterPage() {
             onPrev={prevStep}
             onSubmit={handleRegister}
             errorMessage={errorMessage}
+            showToast={showToast} // ✨ 認証コード送信成功時に呼べるように渡す
           />
         )}
 
