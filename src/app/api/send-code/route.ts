@@ -42,10 +42,7 @@ export async function POST(request: Request) {
       }));
     } catch (dbErr: any) {
       console.error('DynamoDB 認証コード保存エラー:', dbErr);
-      // 🔍 【デバッグ用】本当のDynamoDBエラー内容を画面に直接返します
-      return NextResponse.json({ 
-        error: `【DynamoDB詳細エラー】 ${dbErr?.message || dbErr} (Table: ${TABLE_NAME}, Region: ${region})` 
-      }, { status: 500 });
+      return NextResponse.json({ error: 'データベースへのコード保存に失敗しました。' }, { status: 500 });
     }
 
     const apiKey = process.env.RESEND_API_KEY;
