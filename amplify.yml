@@ -8,6 +8,10 @@ frontend:
       commands:
         - echo "MY_HOUJIN_API_KEY=$MY_HOUJIN_API_KEY" >> .env.production
         - echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env.production
+        - echo "MY_AWS_ACCESS_KEY_ID=$MY_AWS_ACCESS_KEY_ID" >> .env.production
+        - echo "MY_AWS_SECRET_ACCESS_KEY=$MY_AWS_SECRET_ACCESS_KEY" >> .env.production
+        - echo "MY_AWS_REGION=$MY_AWS_REGION" >> .env.production
+        - echo "MY_DYNAMODB_COMPANY_TABLE=$MY_DYNAMODB_COMPANY_TABLE" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
