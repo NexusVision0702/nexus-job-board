@@ -312,10 +312,8 @@ export async function POST(request: Request) {
       body.licenses
     ].join(' '));
 
-    // ✨ 「あ」などの日常文字を排除し、明確なスパム・テストワードのみに限定
     const spamKeywords = ['テスト', 'てすと', 'test', 'sample', 'サンプル', 'dummy', 'ダミー', '名無し'];
     
-    // 単語単位で厳密にチェック（通常の文章中の文字による誤検知を完全に防止）
     const wordsInText = targetText.split(/[\s ,./-]+/);
     const hasTestWord = spamKeywords.some(spam => 
       wordsInText.some(word => word === spam || word.includes(spam))
@@ -401,8 +399,12 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('>>> Registration API Error:', error);
+    // 🔍 【デバッグ用】本番環境のエラー内容を画面に直接返します
     return NextResponse.json(
-      { error: error.message || '登録処理に失敗しました。' },
+      { 
+        error: `【本番デバッグエラー】 ${error?.message || error}`,
+        stack: error?.stack || 'スタックトレースなし'
+      },
       { status: 500 }
     );
   }
