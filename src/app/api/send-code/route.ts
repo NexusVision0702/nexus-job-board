@@ -88,19 +88,28 @@ export async function POST(request: Request) {
       "--------------------------------------------------",
     ].join("\n");
 
+    // 🔍 Resendからの返り値をキャッチして検証できるように修正
     try {
-      const { error: resendError } = await resend.emails.send({
+      const response = await resend.emails.send({
         from: 'ネクビジョ求人 運営事務局 <support@nexus-vision.net>',
         to: [email],
         subject: subject,
         text: text,
       });
 
-      if (resendError) {
-        console.error('Resend API エラー:', resendError);
+      console.log('>>> Resend API 応答:', response);
+
+      if (response.error) {
+        console.error('Resend API エラー:', response.error);
+        return NextResponse.json({ 
+          error: `【Resend送信エラー】 ${JSON.stringify(response.error)}` 
+        }, { status: 500 });
       }
     } catch (networkErr: any) {
       console.error('Resend 通信/ネットワーク例外:', networkErr?.message || networkErr);
+      return NextResponse.json({ 
+        error: `【Resend通信例外】 ${networkErr?.message || networkErr}` 
+      }, { status: 500 });
     }
 
     return NextResponse.json({ 
