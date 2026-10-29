@@ -97,7 +97,7 @@ async function sendReviewNotificationToInternal(companyData: any) {
     "■ 自動審査システムの判定・検知理由",
     "・判定ステータス： 保留（pending_review）",
     "・今回システムが検知した保留理由：",
-    `  ${companyData.reviewReason}`,
+    `   ${companyData.reviewReason}`,
     "--------------------------------------------------",
     "",
     "■ 申請企業・ご担当者様詳細",
@@ -251,12 +251,43 @@ async function sendApprovalNotificationToApplicant(companyData: any) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { corporateNumber, companyName, email, homepageUrl, representativeName, businessDescription, verificationCode } = body;
+    const { 
+      corporateNumber, 
+      companyName, 
+      email, 
+      homepageUrl, 
+      representativeName, 
+      businessDescription, 
+      verificationCode,
+      // 追加：ステップ2〜5で入力されるすべてのフィールドを受け取る
+      corporateType,
+      invoiceNumber,
+      licenseNumber,
+      licenses,
+      capital,
+      establishYear,
+      establishMonth,
+      establishDay,
+      industry,
+      employeeRegular,
+      employeePart,
+      contactName,
+      accountingContactName,
+      phone,
+      accountingEmail,
+      branchType,
+      postalCode,
+      prefecture,
+      city,
+      addressSub,
+      businessPhone,
+      businessEmail,
+      newsletter
+    } = body;
 
     console.log('=== 📥 登録APIが受け取ったデータ ===');
     console.log('companyName:', companyName);
     console.log('representativeName:', representativeName);
-    console.log('businessDescription:', businessDescription);
     console.log('corporateNumber:', corporateNumber);
     console.log('email:', email);
     console.log('=================================');
@@ -292,7 +323,7 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 🔍 自動審査ロジック（誤検知防止・厳密ワード一致版）
+    // 🔍 自動審査ロジック
     // ==========================================
     let approvalStatus = 'approved';
     let reviewReason = '自動審査を通過しました（優良企業認定）。';
@@ -307,9 +338,9 @@ export async function POST(request: Request) {
     const targetText = normalizeText([
       companyName,
       representativeName,
-      body.contactName,
+      contactName,
       businessDescription,
-      body.licenses
+      licenses
     ].join(' '));
 
     const spamKeywords = ['テスト', 'てすと', 'test', 'sample', 'サンプル', 'dummy', 'ダミー', '名無し'];
@@ -347,16 +378,38 @@ export async function POST(request: Request) {
       console.warn('重複チェック時のスキャン警告:', scanErr);
     }
 
-    // データベースへ保存
+    // データベースへすべての項目を保存
     const companyId = 'comp_' + Date.now();
     const item = {
       id: companyId,
       corporateNumber,
       companyName,
+      corporateType: corporateType || '',
       email,
-      homepageUrl,
+      homepageUrl: homepageUrl || '',
       representativeName,
-      businessDescription,
+      invoiceNumber: invoiceNumber || '',
+      licenseNumber: licenseNumber || licenseStringFromLicenses(licenses),
+      capital: capital || '',
+      establishYear: establishYear || '',
+      establishMonth: establishMonth || '',
+      establishDay: establishDay || '',
+      industry: industry || [],
+      employeeRegular: employeeRegular || '',
+      employeePart: employeePart || '',
+      contactName: contactName || '',
+      accountingContactName: accountingContactName || '',
+      phone: phone || '',
+      accountingEmail: accountingEmail || email,
+      branchType: branchType || '本社',
+      postalCode: postalCode || '',
+      prefecture: prefecture || '',
+      city: city || '',
+      addressSub: addressSub || '',
+      businessPhone: businessPhone || phone || '',
+      businessEmail: businessEmail || email,
+      businessDescription: businessDescription || '',
+      newsletter: newsletter ?? false,
       status: approvalStatus,
       reviewReason,
       createdAt: new Date().toISOString(),
@@ -399,7 +452,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('>>> Registration API Error:', error);
-    // 🔍 【デバッグ用】本番環境のエラー内容を画面に直接返します
     return NextResponse.json(
       { 
         error: `【本番デバッグエラー】 ${error?.message || error}`,
@@ -408,4 +460,11 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// 補助関数：licenses配列や文字列を安全に文字列化
+function licenseStringFromLicenses(licenses: any): string {
+  if (Array.isArray(licenses)) return licenses.join(', ');
+  if (typeof licenses === 'string') return licenses;
+  return '';
 }
