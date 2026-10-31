@@ -259,30 +259,35 @@ export async function POST(request: Request) {
       representativeName, 
       businessDescription, 
       verificationCode,
-      // 追加：ステップ2〜5で入力されるすべてのフィールドを受け取る
       corporateType,
       invoiceNumber,
       licenseNumber,
       licenses,
       capital,
-      establishYear,
+      establishmentDate, // "YYYY-MM-DD" 形式など
+      establishYear,     // 万が一直接送られてきた場合用
       establishMonth,
       establishDay,
       industry,
       employeeRegular,
       employeePart,
+      fullTimeEmployees, // Step2Corporateから送られる項目
+      partTimeEmployees, // Step2Corporateから送られる項目
       contactName,
       accountingContactName,
       phone,
       accountingEmail,
       branchType,
+      officeType,        // Step4Addressから送られる項目
       postalCode,
       prefecture,
       city,
       addressSub,
+      addressLine,       // Step4Addressから送られる項目
       businessPhone,
       businessEmail,
-      newsletter
+      newsletter,
+      newsletterOptIn
     } = body;
 
     console.log('=== 📥 登録APIが受け取ったデータ ===');
@@ -378,6 +383,28 @@ export async function POST(request: Request) {
       console.warn('重複チェック時のスキャン警告:', scanErr);
     }
 
+    // ✨ establishmentDate ("YYYY-MM-DD") を年・月・日に分解して保存対応
+    let finalYear = establishYear || '';
+    let finalMonth = establishMonth || '';
+    let finalDay = establishDay || '';
+    if (establishmentDate && typeof establishmentDate === 'string' && establishmentDate.includes('-')) {
+      const parts = establishmentDate.split('-');
+      if (parts.length === 3) {
+        finalYear = parts[0];
+        finalMonth = parts[1];
+        finalDay = parts[2];
+      }
+    }
+
+    // ✨ 従業員数のマッピング対応（fullTimeEmployees / partTimeEmployees にも対応）
+    const finalEmployeeRegular = employeeRegular !== undefined && employeeRegular !== null && employeeRegular !== '' 
+      ? employeeRegular 
+      : (fullTimeEmployees || '');
+    
+    const finalEmployeePart = employeePart !== undefined && employeePart !== null && employeePart !== '' 
+      ? employeePart 
+      : (partTimeEmployees || '');
+
     // データベースへすべての項目を保存
     const companyId = 'comp_' + Date.now();
     const item = {
@@ -391,25 +418,25 @@ export async function POST(request: Request) {
       invoiceNumber: invoiceNumber || '',
       licenseNumber: licenseNumber || licenseStringFromLicenses(licenses),
       capital: capital || '',
-      establishYear: establishYear || '',
-      establishMonth: establishMonth || '',
-      establishDay: establishDay || '',
+      establishYear: finalYear,
+      establishMonth: finalMonth,
+      establishDay: finalDay,
       industry: industry || [],
-      employeeRegular: employeeRegular || '',
-      employeePart: employeePart || '',
+      employeeRegular: finalEmployeeRegular,
+      employeePart: finalEmployeePart,
       contactName: contactName || '',
       accountingContactName: accountingContactName || '',
       phone: phone || '',
       accountingEmail: accountingEmail || email,
-      branchType: branchType || '本社',
+      branchType: branchType || officeType || '本社',
       postalCode: postalCode || '',
       prefecture: prefecture || '',
       city: city || '',
-      addressSub: addressSub || '',
+      addressSub: addressSub || addressLine || '',
       businessPhone: businessPhone || phone || '',
       businessEmail: businessEmail || email,
       businessDescription: businessDescription || '',
-      newsletter: newsletter ?? false,
+      newsletter: newsletter ?? newsletterOptIn ?? false,
       status: approvalStatus,
       reviewReason,
       createdAt: new Date().toISOString(),

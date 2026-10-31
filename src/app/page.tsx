@@ -174,6 +174,19 @@ export default function CompanyRegisterPage() {
         ? industry.join(', ') 
         : String(industry || '');
 
+      // ✨ 設立日（"YYYY-MM-DD"）を自動で年・月・日に分解
+      let establishYear = '';
+      let establishMonth = '';
+      let establishDay = '';
+      if (establishmentDate && String(establishmentDate).includes('-')) {
+        const parts = String(establishmentDate).split('-');
+        if (parts.length === 3) {
+          establishYear = parts[0];
+          establishMonth = parts[1];
+          establishDay = parts[2];
+        }
+      }
+
       const payload = {
         corporateType: String(corporateType || '').trim(),
         companyName: String(companyName || '').trim(),
@@ -183,10 +196,20 @@ export default function CompanyRegisterPage() {
         industry: industryStr.trim(),
         corporateNumber: String(corporateNumber || '').trim(),
         invoiceNumber: String(invoiceNumber || '').trim(),
+        
         establishmentDate: String(establishmentDate || ''),
+        establishYear,
+        establishMonth,
+        establishDay,
+
         capital: String(capital || '').trim(),
+
+        // 💡 従業員数をバックエンドが期待するキー名にマッピング
+        employeeRegular: String(fullTimeEmployees || '').trim(),
+        employeePart: String(partTimeEmployees || '').trim(),
         fullTimeEmployees: String(fullTimeEmployees || '').trim(),
         partTimeEmployees: String(partTimeEmployees || '').trim(),
+
         businessDescription: String(businessDescription || '').trim(),
         homepageUrl: String(homepageUrl || '').trim(),
         licenses: String(licenses || '').trim(),
@@ -203,7 +226,10 @@ export default function CompanyRegisterPage() {
         email: String(email || '').trim(),
         password: String(password || '').trim(),
         verificationCode: String(verificationCode || '').trim(), 
-        newsletterOptIn,
+        
+        // 💡 メルマガ希望フラグを確実にする
+        newsletter: Boolean(newsletterOptIn),
+        newsletterOptIn: Boolean(newsletterOptIn),
       };
 
       const res = await fetch('/api/partners/register', {
@@ -414,7 +440,7 @@ export default function CompanyRegisterPage() {
             onPrev={prevStep}
             onSubmit={handleRegister}
             errorMessage={errorMessage}
-            showToast={showToast} // ✨ 認証コード送信成功時に呼べるように渡す
+            showToast={showToast}
           />
         )}
 
