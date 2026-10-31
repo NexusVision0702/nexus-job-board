@@ -6,7 +6,6 @@ const HOUJIN_API_URL = 'https://api.houjin-bangou.nta.go.jp/4/num';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    // 💡 number と corporateNumber の両方に対応
     const corporateNumber = searchParams.get('number') || searchParams.get('corporateNumber');
 
     if (!corporateNumber || !/^\d{13}$/.test(corporateNumber)) {
@@ -18,7 +17,6 @@ export async function GET(request: Request) {
 
     if (!appId) {
       console.warn('警告: HOUJIN_API_APP_ID が設定されていません。モックデータを返します。');
-      // APIキー未設定時のフォールバック（テスト用）
       return NextResponse.json({
         success: true,
         company: {
@@ -33,8 +31,8 @@ export async function GET(request: Request) {
       });
     }
 
-    // 国税庁APIへリクエスト送信
-    const url = `${HOUJIN_API_URL}?id=${appId}&number=${corporateNumber}&type=1&history=0`;
+    // 💡 変更点: type=1 の指定を外し、history=0（最新情報のみ）で全法人の最新情報を網羅
+    const url = `${HOUJIN_API_URL}?id=${appId}&number=${corporateNumber}&history=0`;
     const apiRes = await fetch(url);
 
     if (!apiRes.ok) {
@@ -51,10 +49,21 @@ export async function GET(request: Request) {
     const corp = corporations[0];
 
     // レスポンスデータの整形
+    const kindMap: { [key: string]: string } = {
+      '01': '株式会社',
+      '02': '有限会社',
+      '03': '合名会社',
+      '04': '合資会社',
+      '05': '合同会社',
+      '31': '国機関',
+      '32': '地方公共団体',
+      '41': 'その他'
+    };
+
     const companyInfo = {
       corporateNumber: corp.corporateNumber,
       companyName: corp.name,
-      corporateType: corp.kind === '01' ? '株式会社' : corp.kind === '02' ? '有限会社' : '法人',
+      corporateType: kindMap[corp.kind] || '法人',
       prefecture: corp.prefectureName || '',
       city: (corp.cityName || '') + (corp.streetNumber || ''),
       addressSub: corp.addressDetails || '',
