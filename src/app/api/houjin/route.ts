@@ -6,7 +6,8 @@ const HOUJIN_API_URL = 'https://api.houjin-bangou.nta.go.jp/4/num';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const corporateNumber = searchParams.get('corporateNumber');
+    // 💡 number と corporateNumber の両方に対応
+    const corporateNumber = searchParams.get('number') || searchParams.get('corporateNumber');
 
     if (!corporateNumber || !/^\d{13}$/.test(corporateNumber)) {
       return NextResponse.json({ error: '有効な13桁の法人番号を指定してください。' }, { status: 400 });
