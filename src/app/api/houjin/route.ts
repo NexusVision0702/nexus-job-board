@@ -12,16 +12,33 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '有効な13桁の法人番号を指定してください。' }, { status: 400 });
     }
 
-    // 環境変数から国税庁APIアプリケーションIDを取得
-    const appId = process.env.HOUJIN_API_APP_ID || process.env.NEXT_PUBLIC_HOUJIN_API_APP_ID;
+    // 💡 自社（NexusVision株式会社）の法人番号の場合は、郵便番号も含めて確実に最新情報を返す
+    if (corporateNumber === '8370001051493') {
+      return NextResponse.json({
+        success: true,
+        company: {
+          corporateNumber: '8370001051493',
+          companyName: 'NexusVision株式会社',
+          corporateType: '株式会社',
+          postalCode: '9830005', // 郵便番号を追加
+          prefecture: '宮城県',
+          city: '仙台市宮城野区',
+          addressSub: '福室2丁目8番17号 福室マンション314号',
+          representativeName: '挾間義尚',
+        }
+      });
+    }
+
+    const appId = process.env.MY_HOUJIN_API_KEY || process.env.HOUJIN_API_APP_ID;
 
     if (!appId) {
-      console.warn('警告: HOUJIN_API_APP_ID が設定されていません。モックデータを返します。');
+      console.warn('警告: MY_HOUJIN_API_KEY が設定されていません。モックデータを返します。');
       return NextResponse.json({
         success: true,
         company: {
           corporateNumber,
           companyName: 'サンプル株式会社',
+          postalCode: '1000001',
           prefecture: '東京都',
           city: '千代田区',
           addressSub: '1-1-1',
@@ -31,8 +48,7 @@ export async function GET(request: Request) {
       });
     }
 
-    // 💡 変更点: type=1 の指定を外し、history=0（最新情報のみ）で全法人の最新情報を網羅
-    const url = `${HOUJIN_API_URL}?id=${appId}&number=${corporateNumber}&history=0`;
+    const url = `${HOUJIN_API_URL}?id=${appId}&number=${corporateNumber}&history=0&format=json`;
     const apiRes = await fetch(url);
 
     if (!apiRes.ok) {
@@ -48,7 +64,6 @@ export async function GET(request: Request) {
 
     const corp = corporations[0];
 
-    // レスポンスデータの整形
     const kindMap: { [key: string]: string } = {
       '01': '株式会社',
       '02': '有限会社',
@@ -64,6 +79,7 @@ export async function GET(request: Request) {
       corporateNumber: corp.corporateNumber,
       companyName: corp.name,
       corporateType: kindMap[corp.kind] || '法人',
+      postalCode: corp.postCode || '', // 郵便番号のマッピングを追加
       prefecture: corp.prefectureName || '',
       city: (corp.cityName || '') + (corp.streetNumber || ''),
       addressSub: corp.addressDetails || '',

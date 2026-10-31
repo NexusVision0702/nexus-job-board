@@ -55,9 +55,22 @@ export default function Step2Corporate({
         <input 
           type="text" 
           value={invoiceNumber || ''} 
-          onChange={e => setInvoiceNumber(e.target.value)} 
-          placeholder="例: T1234567890123" 
-          style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} 
+          onChange={e => {
+            let val = e.target.value;
+            // 小文字の t が入力されたら大文字の T に変換
+            val = val.replace(/^t/, 'T');
+            // 先頭が T で始まっていない場合は自動で T を付与する
+            if (val && !val.startsWith('T') && !val.startsWith('t')) {
+              val = 'T' + val;
+            }
+            // T の後に続く数字のみを抽出して最大13桁に制限
+            const match = val.match(/^T(\d{0,13})/);
+            const formatted = match ? `T${match[1]}` : (val === 'T' ? 'T' : '');
+            setInvoiceNumber(formatted);
+          }} 
+          placeholder="T8370001051493" 
+          maxLength={14}
+          style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box', background: '#fff' }} 
         />
       </div>
 
@@ -74,7 +87,6 @@ export default function Step2Corporate({
           />
         </div>
         <div>
-          {/* 💡 資本金を必須に変更 */}
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px', color: '#374151' }}>
             資本金 <span style={{ color: '#dc2626' }}>*必須</span>
           </label>
@@ -97,6 +109,7 @@ export default function Step2Corporate({
         <span style={{ fontSize: '13px', fontWeight: '700', color: '#334151' }}>
           従業員規模の詳細 <span style={{ color: '#64748b', fontWeight: '400' }}>（任意）</span>
         </span>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', marginBottom: '4px', color: '#64748b' }}>正社員数</label>

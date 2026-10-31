@@ -115,30 +115,32 @@ export default function Step1Basic({
         throw new Error(data.error || '国税庁APIへの接続に失敗しました。');
       }
 
-      const corporations = data?.corporation;
-      if (corporations && corporations.length > 0) {
-        const corp = corporations[0];
+      const comp = data?.company || (data?.corporation && data.corporation[0]);
+
+      if (comp) {
+        const name = comp.companyName || comp.name || '';
+        const kind = comp.corporateType || '';
         
-        const name = corp.name || '';
-        const kind = corp.kind === '01' ? '株式会社' : corp.kind === '02' ? '有限会社' : corp.kind === '03' ? '合同会社' : '';
         if (setCompanyName) setCompanyName(name);
         if (kind && setCorporateType) setCorporateType(kind);
 
-        const pref = corp.prefectureName || '';
-        const city = corp.cityName || '';
-        const street = corp.streetNumber || '';
+        // 💡 郵便番号をセットする処理を追加
+        const postal = comp.postalCode || comp.postCode || '';
+        if (setPostalCode && postal) setPostalCode(postal);
 
-        if (setPostalCode && corp.postCode) setPostalCode(corp.postCode);
+        const pref = comp.prefecture || comp.prefectureName || '';
+        const cityVal = comp.city || comp.cityName || '';
+        const streetVal = comp.addressSub || comp.streetNumber || '';
+
         if (setPrefecture && pref) setPrefecture(pref);
-        if (setCity && city) setCity(city);
+        if (setCity && cityVal) setCity(cityVal);
 
-        // 💡 都道府県名や市区町村名が street に含まれている場合は自動でカットして番地のみにする
-        let cleanStreet = street;
+        let cleanStreet = streetVal;
         if (pref && cleanStreet.startsWith(pref)) {
           cleanStreet = cleanStreet.slice(pref.length);
         }
-        if (city && cleanStreet.startsWith(city)) {
-          cleanStreet = cleanStreet.slice(city.length);
+        if (cityVal && cleanStreet.startsWith(cityVal)) {
+          cleanStreet = cleanStreet.slice(cityVal.length);
         }
         const trimmedStreet = cleanStreet.trim();
 
@@ -150,7 +152,7 @@ export default function Step1Basic({
         setHoujinError('該当する法人が見つかりませんでした。');
       }
     } catch (err: any) {
-      setHoujinError(err.message || 'エラーが発生しました。');
+      setHoujinError(err.message || 'エラーが発生しました。手動でご入力ください。');
     } finally {
       setLoadingHoujin(false);
     }
@@ -170,7 +172,6 @@ export default function Step1Basic({
     }
   };
 
-  // すべての項目が入力・選択されているかどうかの判定
   const isFormComplete = 
     Boolean(String(corporateNumber || '').trim().length === 13) &&
     Boolean(String(companyName || '').trim() && String(companyName || '').length >= 2) &&
