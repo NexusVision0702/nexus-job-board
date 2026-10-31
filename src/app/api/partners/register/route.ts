@@ -264,28 +264,29 @@ export async function POST(request: Request) {
       licenseNumber,
       licenses,
       capital,
-      establishmentDate, // "YYYY-MM-DD" 形式など
-      establishYear,     // 万が一直接送られてきた場合用
+      establishmentDate,
+      establishYear,     
       establishMonth,
       establishDay,
       industry,
       employeeRegular,
       employeePart,
-      fullTimeEmployees, // Step2Corporateから送られる項目
-      partTimeEmployees, // Step2Corporateから送られる項目
+      fullTimeEmployees, 
+      partTimeEmployees, 
       contactName,
       accountingContactName,
       phone,
       accountingEmail,
       branchType,
-      officeType,        // Step4Addressから送られる項目
+      officeType,        
       postalCode,
       prefecture,
       city,
       addressSub,
-      addressLine,       // Step4Addressから送られる項目
+      addressLine,       
       businessPhone,
       businessEmail,
+      stores,            // 💡 追加の店舗・オフィス一覧を受け取る
       newsletter,
       newsletterOptIn
     } = body;
@@ -383,7 +384,7 @@ export async function POST(request: Request) {
       console.warn('重複チェック時のスキャン警告:', scanErr);
     }
 
-    // ✨ establishmentDate ("YYYY-MM-DD") を年・月・日に分解して保存対応
+    // ✨ establishmentDate ("YYYY-MM-DD") を年・月・日に分解
     let finalYear = establishYear || '';
     let finalMonth = establishMonth || '';
     let finalDay = establishDay || '';
@@ -396,7 +397,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // ✨ 従業員数のマッピング対応（fullTimeEmployees / partTimeEmployees にも対応）
+    // ✨ 従業員数のマッピング
     const finalEmployeeRegular = employeeRegular !== undefined && employeeRegular !== null && employeeRegular !== '' 
       ? employeeRegular 
       : (fullTimeEmployees || '');
@@ -436,6 +437,7 @@ export async function POST(request: Request) {
       businessPhone: businessPhone || phone || '',
       businessEmail: businessEmail || email,
       businessDescription: businessDescription || '',
+      stores: stores || [], // 💡 店舗・オフィス一覧をDynamoDBへ保存
       newsletter: newsletter ?? newsletterOptIn ?? false,
       status: approvalStatus,
       reviewReason,
