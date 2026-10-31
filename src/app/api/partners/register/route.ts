@@ -275,6 +275,7 @@ export async function POST(request: Request) {
       partTimeEmployees, 
       contactName,
       accountingContactName,
+      accountingName, // 💡 追加：Step3から送られてくるaccountingNameも受け取れるようにする
       phone,
       accountingEmail,
       branchType,
@@ -286,7 +287,7 @@ export async function POST(request: Request) {
       addressLine,       
       businessPhone,
       businessEmail,
-      stores,            // 💡 追加の店舗・オフィス一覧を受け取る
+      stores,            
       newsletter,
       newsletterOptIn
     } = body;
@@ -406,6 +407,9 @@ export async function POST(request: Request) {
       ? employeePart 
       : (partTimeEmployees || '');
 
+    // 💡 経理担当者名（どちらのプロパティ名で送られてきても確実に対応）
+    const finalAccountingContactName = accountingContactName || accountingName || '';
+
     // データベースへすべての項目を保存
     const companyId = 'comp_' + Date.now();
     const item = {
@@ -426,7 +430,7 @@ export async function POST(request: Request) {
       employeeRegular: finalEmployeeRegular,
       employeePart: finalEmployeePart,
       contactName: contactName || '',
-      accountingContactName: accountingContactName || '',
+      accountingContactName: finalAccountingContactName, // 💡 確実に保存される
       phone: phone || '',
       accountingEmail: accountingEmail || email,
       branchType: branchType || officeType || '本社',
@@ -437,7 +441,7 @@ export async function POST(request: Request) {
       businessPhone: businessPhone || phone || '',
       businessEmail: businessEmail || email,
       businessDescription: businessDescription || '',
-      stores: stores || [], // 💡 店舗・オフィス一覧をDynamoDBへ保存
+      stores: stores || [],
       newsletter: newsletter ?? newsletterOptIn ?? false,
       status: approvalStatus,
       reviewReason,
